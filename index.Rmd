@@ -176,51 +176,51 @@ III) Modelo de Correção de Erro (VEC)
 
 <br>
 
-# [AULA 1](https://econfacape.github.io/econometria2/aula1)
+# [AULA 1](https://econfacape.github.io/macroeconometria/aula1)
 
 <br>
 
-# [AULA 2](https://econfacape.github.io/econometria2/aula2)
+# [AULA 2](https://econfacape.github.io/macroeconometria/aula2)
 
 <br>
 
-# [AULA 3](https://econfacape.github.io/econometria2/aula3)
+# [AULA 3](https://econfacape.github.io/macroeconometria/aula3)
 
 <br>
 
-# [AULA 4](https://econfacape.github.io/econometria2/aula4)
+# [AULA 4](https://econfacape.github.io/macroeconometria/aula4)
 
 <br>
 
-# [AULA 5](https://econfacape.github.io/econometria2/aula5)
+# [AULA 5](https://econfacape.github.io/macroeconometria/aula5)
 
 <br>
 
-# [AULA 6](https://econfacape.github.io/econometria2/aula6)
+# [AULA 6](https://econfacape.github.io/macroeconometria/aula6)
 
 <br>
 
-# [AULA 7](https://econfacape.github.io/econometria2/aula7)
+# [AULA 7](https://econfacape.github.io/macroeconometria/aula7)
 
 <br>
 
-# [AULA 8](https://econfacape.github.io/econometria2/aula8)
+# [AULA 8](https://econfacape.github.io/macroeconometria/aula8)
 
 <br>
 
-# [AULA 9](https://econfacape.github.io/econometria2/aula9)
+# [AULA 9](https://econfacape.github.io/macroeconometria/aula9)
 
 <br>
 
-# [AULA 10](https://econfacape.github.io/econometria2/aula10)
-
-
-<br>
-
-# [AULA 11](https://econfacape.github.io/econometria2/aula11)
+# [AULA 10](https://econfacape.github.io/macroeconometria/aula10)
 
 
 <br>
 
-# [AULA 12](https://econfacape.github.io/econometria2/aula12)
+# [AULA 11](https://econfacape.github.io/macroeconometria/aula11)
+
+
+<br>
+
+# [AULA 12](https://econfacape.github.io/macroeconometria/aula12)
 
