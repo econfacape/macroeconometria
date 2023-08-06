@@ -61,26 +61,76 @@ library(ggthemes)
 library(FinTS)
 library(scales)
 library(ggplot2)
-#library(easyGgplot2)
+library(plotly)
 library(quantmod)
 
 options(digits=4)
 
 #Entrando dados no R
 
+today <- as.Date("2023-08-04")
+sem_ano <- 31 #ajustar semanalmente
+
 dados <- read.csv2('dados_manga_palmer_semana.csv', header=T, sep=";", dec=".")
-dados <- dados[,5] #ficar apenas com a 5 coluna
+#dados <- dados[,-c(9:10)] #retirar as ultimas colunas
+colnames(dados)[1]<-'produto'
 
-#Setando como série temporal
-dadosp <- ts(dados, start=c(2012,01), freq=52)
+#Entrando dados no R - Deflator
+igpdi <- read.csv2('igpdi.csv', 
+                   header=T, sep=";",
+                   dec=".")
 
-#Grafico da evolucao do preco da Manga Palmer
-start(dadosp)
-end(dadosp)
+dados_comb<-cbind(dados, igpdi)
+dadosp<-dados_comb[,-c(1,2,6,7)]
 
-plot(dadosp, main='Preco Mensal de Manga Palmer - Vale',
-     xlab='(meses)', ylab='Reais (R$)', lwd=3)
-axis(1, at=c(2012:2022))
+#Deflacionar a serie de manga
+dadosp$preco_def <- dadosp[,3]*(tail(dadosp[,4],1)/dadosp[,4])
+#dadosp<-dadosp[,-2]
+
+#Criando uma variável com as datas semanais
+dadosp$date <- seq(as.Date('2012-01-14'),to=today,by='1 week') 
+dadosp$date[dadosp$date == "2016-01-02"] <- "2015-12-31" #ajustando algumas datas
+dadosp$date[dadosp$date == "2015-01-03"] <- "2014-12-31"
+dadosp$date[dadosp$date == "2014-01-04"] <- "2013-12-31"
+dadosp$date[dadosp$date == "2013-01-05"] <- "2012-12-31"
+dadosp$date[dadosp$date == "2022-01-01"] <- "2022-01-03"
+dadosp$date[dadosp$date == "2022-12-31"] <- "2023-01-01"
+
+#Analise de Serie Temporal
+preco_palmer <- dadosp[,5]
+preco_palmer <- ts(preco_palmer, start=c(2012,1), freq=52)
+
+#Gráfico com Ggplot2
+
+g1 <- ggplot(data=dadosp, aes(x=date)) +  #estetica vai valer para todos os geom's
+  geom_line(aes(y=preco_def, colour="PREÇO"), lwd=1)+
+  scale_colour_manual("", 
+                      breaks = c("PREÇO"),
+                      values = c("blue")) +
+  labs(y= "Preço R$", x= "Semanas de cada Ano", title='',
+       caption = "Fonte: CEPEA reprocessado pelo Observatório de Mercado de Manga da Embrapa") +
+  scale_y_continuous(limits=c(0,8), n.breaks = 9, expand = expansion(add=c(0,0.5)), 
+                     labels=number_format(accuracy = 0.01, decimal.mark = ","))+
+  scale_x_date(date_breaks = "1 year",
+               labels = date_format("%Y"))+
+  theme_classic()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=35, hjust=1, size=10, margin = margin(b=20)),
+        axis.text.y=element_text(hjust=1, size=10, margin = margin(l=20)),
+        axis.title.x = element_text(size=10, face = "bold", margin = margin(b=20)),
+        axis.title.y = element_text(size=10, face = "bold", margin = margin(l=20)),
+        plot.title = element_text(hjust = 0.5, size=16, face="italic"),
+        plot.caption = element_text(hjust = 0, size=12),
+        legend.position = c(1,1),
+        legend.justification = c(1.2, 1.2),
+        legend.text=element_text(size=10)) # Definindo posição da legenda
+
+ggplotly(g1) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.35, 
+                      y=-0.2,
+                      title=''))
+
 ```
 
 <br>
@@ -103,7 +153,7 @@ A idéia básica é que o valor da série em um dado instante de tempo é result
 
 ```{r econ2, warning=FALSE, message=FALSE}
 #Decompor a Serie
-decompa <- decompose(dadosp, type = 'additive')
+decompa <- decompose(preco_palmer, type = 'additive')
 plot(decompa)
 ```
 
@@ -174,17 +224,17 @@ e assim, sucessivamente!
 
 ```{r econ3, warning=FALSE, message=FALSE}
 #Defasagens da Serie
-l1dadosp <- Lag(dadosp, k=-1)
-head(dadosp)
+l1dadosp <- Lag(preco_palmer, k=-1)
+head(preco_palmer )
 head(l1dadosp)
 
 #Defasagens da Serie
-l2dadosp <- Lag(dadosp, k=-2)
-head(dadosp)
+l2dadosp <- Lag(preco_palmer, k=-2)
+head(preco_palmer)
 head(l1dadosp)
 head(l2dadosp)
 
-tail(dadosp)
+tail(preco_palmer)
 tail(l1dadosp)
 tail(l2dadosp)
 
@@ -227,9 +277,9 @@ então, $\Delta=1-L$
 
 ```{r econ4, warning=FALSE, message=FALSE}
 #Diferenciacao da Serie
-ddadosp <- diff(dadosp)
+ddadosp <- diff(preco_palmer)
 
-head(dadosp)
+head(preco_palmer)
 head(ddadosp)
 
 #Grafico da serie
@@ -238,9 +288,9 @@ plot(ddadosp, main='Preco Mensal de Manga Palmer - Vale - 1 Diferenca',
 axis(1, at=c(2012:2020))
 
 #2 Diferenciacao da Serie
-d2dadosp <- diff(dadosp, differences = 2)
+d2dadosp <- diff(preco_palmer, differences = 2)
 
-head(dadosp)
+head(preco_palmer)
 head(d2dadosp)
 
 #Grafico da serie
@@ -281,9 +331,9 @@ O modelo aditivo é mais apropriado quando estes componentes não forem proporci
 
 ```{r econ5, warning=FALSE, message=FALSE}
 #Decompor a Serie
-decompa <- decompose(dadosp, type = 'additive')
+decompa <- decompose(preco_palmer, type = 'additive')
 plot(decompa)
 
-decompam <- decompose(dadosp, type = 'multiplicative')
+decompam <- decompose(preco_palmer, type = 'multiplicative')
 plot(decompam)
 ```
