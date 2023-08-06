@@ -20,8 +20,8 @@ knitr::opts_chunk$set(
   echo       = TRUE,
   warning    = FALSE,
   message    = FALSE,
-  fig.width  = 10, 
-  fig.height = 7,
+  fig.width  = 9, 
+  fig.height = 6,
   fig.align  = "center",
   comment    = "#",
   size       = "normalsize"
@@ -50,8 +50,308 @@ a) correlação entre as observações para meses sucessivos em dado ano, isto �
 
 b) correlação entre as observações para o mesmo mês em anos sucessivos, ou seja, $Y_t$ relacionado com $Y_{t-s}, Y_{t-2s}, Y_{t-3s}$ em que "s" é o período sazonal considerado.
 
-Considere uma série temporal de preços da melancia. Em janeiro de 2014, por exemplo, é relacionado com o preço de dezembro de 2013, de novembro de 2013, de outubro de 2013, além de janeiro de 2013, janeiro de 2012, janeiro de 2011, etc.. O mesmo ocorreria com qualquer outra série histórica macroeconômica; 
+Considere uma série temporal de volume exportado de mangas. Os volumes de outubro, por exemplo, de todos os anos são correlacionados positivamente; 
+
 Séries sazonais apresentam correlações altas nos *lags sazonais*, que são os lags múltiplos de "s".
+
+<br>
+
+## Gráfico das Exportações de Manga entre 2012 e 2023
+
+<br>
+
+```{r tratamento_base}
+#Direcionado o R para o Diretorio a ser trabalhado
+#setwd('c:/Users/Joao Ricardo Lima/Dropbox/tempecon/dados_manga')
+setwd('/Users/jricardofl/Dropbox/tempecon/dados_manga')
+
+#Inicio do Script
+#Pacotes a serem utilizados 
+library(mFilter)
+library(forecast)
+library(tsutils)
+library(seasonal)
+library(ggplot2)
+library(uroot)
+library(tseries)
+library(ggthemes)
+library(dplyr)
+library(quantmod)
+library(scales)
+library(kableExtra)# complex tables
+library(lmtest)
+library(FinTS)
+library(rbcb)
+library(plotly)
+library(DT)
+library(magrittr)
+library(rmarkdown)
+library(reshape2)
+library(rbcb)
+library(tidyverse)
+library(lubridate)
+library(zoo)
+
+#Entrando dados no R
+dados1 <- read.csv2('exportacoes_2012_2023.csv', header=T, sep=";", dec = ".")
+dados1 <- dados1/1000
+dados1[,1] <- seq(2012, 2023, by = 1)
+colnames(dados1) = c('Ano', 'Valor', 'Toneladas')
+dados1 <- tibble(dados1)
+
+mycolor1 <- "gold"
+mycolor2 <- "red"
+
+g1 <- ggplot(data=dados1) +  #estetica vai valer para todos os geom's
+  geom_col(aes(x=Ano, y=Toneladas, fill="Mil Toneladas"), lwd=1)+
+    scale_fill_manual(values=mycolor1)+
+  geom_line(aes(x=Ano, y=Valor, colour="Milhões de Dólares"), size=2)+
+  scale_colour_manual(values=mycolor2)+
+  labs(y= "US$ Milhões / Mil Ton", x= "Anos", title='',
+       caption = "") +
+  scale_y_continuous(limits=c(0, 300), n.breaks = 10, expand = expansion(add=c(0,0.5)))+
+  scale_x_continuous(breaks = seq(2012, 2023, by = 1))+
+  theme_classic()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=12, margin = margin(b=20)),
+        axis.text.y=element_text(hjust=1, size=12, margin = margin(l=20)),
+        axis.title.x = element_text(size=12, face = "bold", margin = margin(b=20)),
+        axis.title.y = element_text(size=12, face = "bold", margin = margin(l=20)),
+        plot.title = element_text(hjust = 0.5, size=16, face="italic"),
+        plot.caption = element_text(hjust = 0, size=12),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=10)) # Definindo posição da legenda
+
+ggplotly(g1) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.25, 
+                      y=-0.2,
+                      title=''))
+```
+
+<br>
+
+## Volume mensal exportado de Mangas
+
+<br>
+
+``` {r econ1, warning=FALSE, message=FALSE}
+#Direcionando o R para o Diretorio a ser trabalhado
+setwd('/Users/jricardofl/Dropbox/tempecon/dados_manga')
+
+#Limpa o Ambiente Global
+rm(list=ls())
+
+#Inicio do Script
+#Pacotes a serem utilizados 
+library(foreign)
+library(mFilter)
+library(forecast)
+library(dplyr)
+library(tsutils)
+library(ggplot2)
+library(plotly)
+library(reshape2)
+
+atual <-  as.Date("2023-06-01") #ultimo mes disponibilizado
+mes <- 6
+
+#Entrando dados no R
+dados2 <- read.csv2('total_exporta_br.csv', header=T, sep=";", dec = ".")
+#dados <- dados[,-c(9:10)] #retirar as ultimas colunas
+colnames(dados2)[1]<-'ano'
+
+#Ajusta para Volume
+#Analise de Serie Temporal
+exporta_manga_volume <- dados2[,4]
+exporta_manga_volume<-exporta_manga_volume/1000  #passando de quilo para
+
+#Setando como uma série temporal
+exporta_manga_volume <- ts(exporta_manga_volume, start=c(2012,1), freq=12)
+
+#Grafico da evolucao do volume exportado de manga
+plot(exporta_manga_volume, main='Volume mensal exportado de Mangas',
+     xlab='Meses dos anos', ylab='Toneladas', lwd=3)
+```
+
+<br>
+
+## Decomposição da Série Temporal nos componentes
+
+<br>
+
+```{r econ2, warning=FALSE, message=FALSE}
+#Decompor a Serie
+decompa <- decompose(exporta_manga_volume, type = 'multiplicative')
+plot(decompa)
+```
+
+<br>
+
+## Gráfico da Tendência
+
+<br>
+
+```{r econ3, warning=FALSE, message=FALSE}
+trend_volume <- cmav(exporta_manga_volume, outplot=F)
+date <- seq(as.Date('2012-01-01'),to=atual,by='1 month')
+trend_volume <- tibble(date, trend_volume)
+
+g5 <- ggplot(data=trend_volume)+
+  geom_line(aes(x=date, y=trend_volume), color="blue", size=1.5)+
+  scale_y_continuous(limits=c(0,25000), n.breaks = 10, 
+                     expand = expansion(add=c(0,0.5)))+
+  scale_x_date(date_breaks = "1 year",
+               labels = date_format("%Y"))+
+  labs(y= "Tendência", x= "Meses de cada Ano", title='',
+       caption = "")+
+  theme_classic()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=12, margin = margin(b=10)),
+        axis.text.y=element_text(hjust=0.5, size=12, margin = margin(l=10)),
+        axis.title.x = element_text(size=12, face = "bold", margin = margin(b=10)),
+        axis.title.y = element_text(size=12, face = "bold", margin = margin(l=10)),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size=10),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=10)) # Definindo posição da legenda
+
+ggplotly(g5) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.25, 
+                      y=-0.2,
+                      title=''))
+```
+
+<br>
+
+## Gráfico da Sazonalidade
+
+<br>
+
+```{r econ4, warning=FALSE, message=FALSE}
+decompa<-decompose(exporta_manga_volume, type = 'multiplicative')
+sazonal_volume <- decompa$figure
+meses <- seq(as.Date("2021/1/1"), by = "month", length.out = 12) 
+sazonal_graph_volume <- tibble(meses, sazonal_volume)
+
+g6 <- ggplot(data=sazonal_graph_volume)+
+  geom_line(aes(x=meses, y=sazonal_volume), color="blue", size=1.5)+
+  scale_y_continuous(limits=c(-1,3), n.breaks = 5, expand = expansion(add=c(0,0.5)), 
+                     labels=number_format(accuracy = 0.1)) +
+    scale_x_date(date_breaks = "1 month",
+               labels = date_format("%B"))+
+  labs(y= "", x= "Meses de cada Ano", title='',
+       caption = "")+
+  theme_minimal()+
+  theme(axis.text.x=element_text(angle=45, hjust=0.5, size=12, margin = margin(b=10)),
+        axis.text.y=element_text(hjust=0.5, size=12, margin = margin(l=10)),
+        axis.title.y = element_text(size=12, face = "bold"),
+        axis.title.x = element_text(size=12, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size=12),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=10)) # Definindo posição da legenda
+
+ggplotly(g6) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.25, 
+                      y=-0.2,
+                      title=''))
+```
+
+<br>
+
+## Analise da Sazonalidade com o seasplot
+
+<br>
+
+``` {r econ5, warning=FALSE, message=FALSE}
+seasplot(exporta_manga_volume, outplot = 5)
+```
+
+
+<br>
+
+
+## Comparação da média histórica com 3 últimos anos
+
+``` {r econ6, warning=FALSE, message=FALSE}
+#Comparações com os anos e entre as médias/max/min
+
+exporta_manga_volume_2020 <- window(exporta_manga_volume, end=c(2020,12))
+seas20_vol<-seasplot(exporta_manga_volume_2020, trend=F, outplot = F)
+medias20_vol <- colMeans(seas20_vol$season)
+
+exporta_manga_volume_2021 <- window(exporta_manga_volume, end=c(2021,12))
+
+exporta_manga_volume_2022 <- window(exporta_manga_volume, end=c(2022,12))
+
+exporta_manga_volume_23 <- as.matrix(tail(exporta_manga_volume,mes)) #ajustar mensalmente
+exporta_manga_volume_2023 <- matrix(NA, nrow=12, ncol=1)
+
+for(i in 1:mes){
+  exporta_manga_volume_2023[i,1] = exporta_manga_volume_23[i,1]
+}
+  
+#Como só se tem até a semana 12
+medias20_vol <- medias20_vol[1:12]
+
+matrix_vol = matrix(NA, nrow=12, ncol=2)
+
+for(i in 1:12){
+  matrix_vol[i,1] = min(seas20_vol$season[,i])
+  matrix_vol[i,2] = max(seas20_vol$season[,i])
+}
+
+#time <- c("Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", #"Dezembro")
+#time <-seq(1:12)
+table_volume <- data.frame(meses, round(matrix_vol[,1],0), round(medias20_vol,0), round(matrix_vol[,2],0), round(tail(exporta_manga_volume_2021,12),0),
+round(tail(exporta_manga_volume_2022,12),0), round(exporta_manga_volume_2023[,1],0))
+colnames(table_volume) = c('Meses', 'Mínimo', 'Média', 'Máximo', '2021', '2022', '2023')
+
+tablea_vol <- table_volume[,-c(2,4:7)]
+tableb_vol <- table_volume[,-c(2,3,4)]
+
+tablea2_vol <- melt(tablea_vol, id.var='Meses')
+tableb2_vol <- melt(tableb_vol, id.var='Meses')
+
+mycolors <- c("lightblue3", "gray44", "gold")
+
+g7 <- ggplot()+
+  geom_col(data=tableb2_vol, aes(x=Meses, y=value, fill=variable), lwd=1,
+           position = "dodge")+
+  scale_fill_manual(values=mycolors)+
+  geom_line(data=tablea2_vol, aes(x=Meses, y=value, colour=variable), linetype = "solid",
+            size = 1)+
+  scale_colour_manual(values = c("chocolate")) +
+  scale_y_continuous(limits = c(0, 50000), n.breaks = 10)+
+  scale_x_date(date_breaks = "1 month",
+               labels = date_format("%B"))+
+  labs(y= "Toneladas", x= "Meses do Ano", title='Exportações de Manga do Vale do S. Francisco: valores e estatísticas mensais.',
+       caption = "")+
+  theme_minimal()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=35, hjust=0.5, size=8, margin = margin(b=20)),
+        axis.text.y=element_text(hjust=1, size=8, margin = margin(l=20)),
+        axis.title.x = element_text(size=8, face = "bold", margin = margin(b=20)),
+        axis.title.y = element_text(size=8, face = "bold", margin = margin(l=20)),
+        plot.title = element_text(hjust = 0.5, size=12),
+        plot.caption = element_text(hjust = 0, size=12),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=9)) # Definindo posição da legenda
+
+ggplotly(g7) %>%
+  layout(legend = list(
+    orientation = "h", 
+    x=0.25, 
+    y=-0.2,
+    title=''))
+```
 
 <br>
 
@@ -60,8 +360,6 @@ Séries sazonais apresentam correlações altas nos *lags sazonais*, que são os
 <br>
 
 A *sazonalidade* pode ser de natureza **determinística** ou **estocástica**. A sazonalidade determinística é aquela que tem um padrão previsível a partir de meses anteriores e normalmente está relacionada com a influência de fenomenos climáticos ou datas específicas que se repetem ano a ano.
-
-Pode ser analisada por meio de regressão ou médias móveis.
 
 <br>
 
@@ -103,69 +401,23 @@ Dado que $\sum_{j=i}^{12}d_j=0$, $\alpha_{12}=-(\alpha_1+\alpha_2+ \dots+ \alpha
 
 <br>
 
-``` {r econ1, warning=FALSE, message=FALSE}
-#Direcionando o R para o Diretorio a ser trabalhado
-setwd('/Users/jricardofl/Dropbox/tempecon/facape/econometria2')
-
-#Limpa o Ambiente Global
-rm(list=ls())
-
-#Inicio do Script
-#Pacotes a serem utilizados 
-library(foreign)
-library(mFilter)
-library(forecast)
-library(dplyr)
-library(tsutils)
-library(ggplot2)
-
-#Entrando com os dados
-melancia <- read.dta("melancia1.dta")
-melancia <- melancia[,-c(1:6)] #deixar apenas a ultima coluna
-
-#Setando como série temporal
-melancia <- ts(melancia, start=c(2003,01), freq=12)
-
-#Grafico da evolucao do preco da Melancia
-plot(melancia, main='Preco Melancia Deflacionado',
-     xlab='(meses)', ylab='Reais (R$)', lwd=3)
-```
-<br>
-
-``` {r econ2, warning=FALSE, message=FALSE}
-#Usando apenas uma parte dos dados
-melancia1 <- window(melancia, start=c(2005,1))
-
-#Grafico da evolucao do preco da melancia
-plot(melancia1, main='Preco Melancia Deflacionado',
-     xlab='(meses)', ylab='Reais (R$)', lwd=3)
-
-```
-
-<br>
-
-``` {r econ3, warning=FALSE, message=FALSE}
-#Geracao da variavel tendencia
-trend <- 1:length(melancia1)
-
+``` {r econ7, warning=FALSE, message=FALSE}
 #Geracao das variaveis Dummy Sazonais
-dseas1 <- seasonaldummy(melancia1)
-for(i in c(12, 24, 36, 48, 60, 72, 84, 96, 108)) {
+exporta_manga_volume1 <- window(exporta_manga_volume, end=c(2022,12))
+trend_volume <- ts(trend_volume, start=c(2012,1), freq=12)
+trend_volume1 <- window(trend_volume, end=c(2022,12))
+trend_volume1 <- trend_volume1[,2] 
+
+dseas1 <- seasonaldummy(exporta_manga_volume1)
+for(i in c(12, 24, 36, 48, 60, 72, 84, 96, 108, 120, 132)) {
   dseas1[i,] <- -1
 }
 
-regressao1 <- lm(melancia1 ~ trend + dseas1)
+#resultados ficarem com 4 casas decimais
+#options(digits=4) 
+
+regressao1 <- lm(exporta_manga_volume1 ~ trend_volume1 + dseas1)
 summary(regressao1)
-
-```
-
-<br>
-
-### Gráfico dos coeficientes da regressão
-
-<br>
-
-``` {r econ4, warning=FALSE, message=FALSE}
 
 # Organização dos Coeficientes da Regressão 
 
@@ -177,6 +429,7 @@ coeffs <- coefficients(regressao1) #salva os coeficientes do modelo
 dezembro <- as.data.frame(-(coeffs[3]+coeffs[4]+coeffs[5]+coeffs[6]+coeffs[7]+
                               coeffs[8]+coeffs[9]+coeffs[10]+coeffs[11]
                             +coeffs[12]+coeffs[13]))
+
 colnames(dezembro)[1] <- "coeffs"
 rownames(dezembro)[1] <- "Dezembro"
 
@@ -209,7 +462,7 @@ mycolor1 <- "blue" #escolhe a cor do gráfico
 ggplot(data=indices_sazonais, aes(x=meses, y=coeffs, fill="Indices Sazonais"))+
   geom_col()+
     scale_fill_manual(values=mycolor1)+
-    labs(y= "Índices Sazonais", x= "Meses", title='Analise de Sazonalidade Melancia por Regressão',
+    labs(y= "Índices Sazonais", x= "Meses", title='Analise de Sazonalidade Exportações de Manga por Regressão',
        caption = "")+
     theme_minimal()+ #Definindo tema
     theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=20)),
@@ -219,100 +472,10 @@ ggplot(data=indices_sazonais, aes(x=meses, y=coeffs, fill="Indices Sazonais"))+
         plot.title = element_text(hjust = 0.5, size=16, face="italic"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        plot.caption = element_text(hjust = 0, size=12)) # Definindo posição da legenda
-
+        plot.caption = element_text(hjust = 0, size=12),
+        legend.position = 'bottom',
+        legend.title = element_blank()) # Definindo posição da legenda
 ```
 
-<br>
-
-### Gráfico da Série sem Sazonalidade e sem Tendência pelo método da regressão
 
 <br>
-
-``` {r econ5, warning=FALSE, message=FALSE}
-#Série retirada a sazonalidade e tendencia
-melancia.saz <- ts(residuals(regressao1)+ mean(fitted(regressao1)), start=c(2005,1), freq=12)
-melancia1.saz <- ts(residuals(regressao1), start=c(2005,01), freq=12)
-
-#Gráficos
-plot(melancia1, main="Preço de Melancia, Preço de Melancia Sem Sazonalidade e Tendencia",
-     xlab='', ylab='% a.a.', lwd=3, ylim=c(-0.2, 0.7))
-lines(melancia1.saz, col='red', lwd=3)
-lines(melancia.saz, col='blue', lwd=3)
-legend('topleft', col=c('black','red', 'blue'), lty=c(1,1), lwd=c(2,2),
-       legend=c('Preço', 'Preço sem Sazonal', 'Preço sem Sazonal + Média'))
-```
-
-<br>
-
-## Sazonalidade - método das Médias Móveis 
-
-<br>
-
-Os resultados mais importantes que se obtém do ajustamento por média móvel são: 
-
-a) fatores sazonais que caracterizam o padrão de variação sazonal da série; 
-
-b) série dessazonalizada; 
-
-Uma série temporal pode ser decomposta nos seus componentes segundo o modelo aditivo ou multiplicativo. O modelo aditivo e a representação das variações sazonais e aleatórias são:
-
-<br>
-
-$$
-Y=T+S+I, \qquad logo, \quad Y-T=S+I
-$$
-<br>
-
-Para o modelo multiplicativo, 
-
-<br>
-
-$$
-Y=TSI, \qquad logo, \quad \frac{Y}{T}=SI
-$$
-<br>
-
-### Sazonalidade - Médias Móveis no R
-
-<br>
-
-No R será usado o comando ``cmav`` do pacote ``tsutils`` para se encontrar a série suavizada pelo método de médias móveis e, depois, para retirar a sazonalidade da série.  
-
-É possível fazer o gráfico da série suavizada e da série dessazonalizada. 
-
-Com o uso do comando ``seasplot`` do pacote ``tsutils``, é gerado um gráfico dos fatores sazonais. 
-
-<br>
-
-``` {r econ6, warning=FALSE, message=FALSE}
-#Calculo da sazonalidade por media movel centralizada.
-cmav(melancia1, outplot=T)
-
-#Salvando os valores da sazonalidade em um objeto
-melancia.ma <- cmav(melancia1)
-```
-
-<br>
-
-``` {r econ7, warning=FALSE, message=FALSE}
-#Série sem sazonalidade por medias moveis
-melssazma <- melancia1 - melancia.ma
-
-#Gráficos
-plot(melancia1, main='Melancia, Melancia STS, Melancia SMA',
-     xlab='', ylab='% a.a.', lwd=3, ylim=c(-0.2, 0.7))
-lines(melancia1.saz, col='red', lwd=3)
-lines(melssazma, col='green', lwd=3)
-legend('topleft', col=c('black','red', 'green'), lty=c(1,1), lwd=c(2,2),
-       legend=c('Preço', 'Preço sem Sazonal Regressao', 'Preço sem Sazonal Media Movel'))
-```
-<br>
-
-## Analise da Sazonalidade com o seasplot
-
-<br>
-
-``` {r econ8, warning=FALSE, message=FALSE}
-seasplot(melancia1, outplot = 5)
-```
