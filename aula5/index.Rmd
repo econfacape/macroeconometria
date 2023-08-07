@@ -185,20 +185,54 @@ library(forecast)
 library(ggplot2)
 library(urca)
 library(tseries)
+library(GetBCBData)
+library(magrittr)
+library(reshape2)
 
-# Entrada de dados e configuração como série temporal
-ipca <- read.csv2('econ2Raula3arq1.csv', header=T, sep=";", dec=",")
-ipca <- ipca[,-1]
-ipca <- ts(ipca, start=c(1999,08), freq = 12)
+# Coleta e tratamento de dados
+selic_ipca <- GetBCBData::gbcbd_get_series(
+  id          = c("IPCA em 12 meses" = "13522", "Taxa SELIC" = "4189"),
+  first.date  = "2003-01-01", 
+  use.memoise = FALSE
+) %>% 
+  dplyr::as_tibble() %>% 
+  dplyr::select(
+    "date"     = ref.date, 
+    "variable" = series.name, 
+    value
+  )
 
-selic <- read.csv2('econ2Raula3arq2.csv', header=T, sep=';', dec=',')
-selic <- selic[,-1]
-selic <- ts(selic, start=c(1999, 08), freq=12)
+# Gráfico com o ggplot2
+selic_ipca %>% 
+  ggplot2::ggplot(ggplot2::aes(x = date, y = value, colour = variable)) +
+  ggplot2::geom_line(size = 1) +
+  ggplot2::labs(title = "Inflação vs. Taxa de Juros - Selic",
+                x = "",
+                y = "% a.a.",
+                caption = "Dados: SGS/BCB | Elaborado por:") +
+  ggplot2::scale_colour_manual(values = c(
+             "#282f6b", # blue
+             "#b22200" # red
+  )) +
+  ggplot2::facet_wrap(~variable, nrow = 2, scales = "free_y") +
+  ggplot2::theme_minimal()+
+  ggplot2::theme(legend.position = "none")
 ```
 
 ``` {r econ5_2}
 # FAC e FACp
 #Visualizando da série, da FAC e da FACp 
+
+dados_sgs <- GetBCBData::gbcbd_get_series(
+id = c("IPCA" = 13522, "Selic" = 4189),
+first.date = "2003-01-01",
+last.date = "2023-06-01",
+format.data = "wide"
+)
+
+ipca <- dados_sgs$IPCA
+selic <- dados_sgs$Selic
+
 ggtsdisplay(ipca, main='IPCA')
 ggtsdisplay(selic, main='Selic')
 
@@ -332,32 +366,43 @@ print(12*(length(selic)/100)^(1/4))
 
 ipcaC.dfgls <- ur.ers(ipca, type = c("DF-GLS"),
                         model = c("constant"),
-                        lag.max = 8)
+                        lag.max = 15)
 summary(ipcaC.dfgls)
 
 #Estatistica de Teste DFGLS para IPCA Com Tendência
 
 ipcaT.dfgls <- ur.ers(ipca, type = c("DF-GLS"),
                      model = c("trend"),
-                     lag.max = 8)
+                     lag.max = 15)
 summary(ipcaT.dfgls)
 
 
 #Estatistica de Teste DFGLS para Selic
 selicC.dfgls <- ur.ers(selic, type = c("DF-GLS"),
                       model = c("constant"),
-                      lag.max = 12)
+                      lag.max = 15)
 summary(selicC.dfgls)
 
 selicT.dfgls <- ur.ers(selic, type = c("DF-GLS"),
                       model = c("trend"),
-                      lag.max = 12)
+                      lag.max = 15)
+summary(selicT.dfgls)
+
+#Estatistica de Teste DFGLS para Selic
+selicC.dfgls <- ur.ers(selic, type = c("DF-GLS"),
+                      model = c("constant"),
+                      lag.max = 5)
+summary(selicC.dfgls)
+
+selicT.dfgls <- ur.ers(selic, type = c("DF-GLS"),
+                      model = c("trend"),
+                      lag.max = 4)
 summary(selicT.dfgls)
 ```
 
-Para o IPCA com constante e 8 lags, em modulo o valor da estatistica de teste é maior do que o valor critico de 10%. Assim, pode-se rejeitar a hipotese nula de que a serie possui raiz unitária. O mesmo resultado é obtido quando se faz o teste com tendência.
+Para o IPCA com constante ou tendência e 15 lags, em modulo o valor da estatistica de teste é menor do que o valor critico de 10%. Assim, não se pode rejeitar a hipótese nula de que a serie possui raiz unitária. 
 
-No caso da SELIC, o valor da estatística de teste é menor do que o valor crítico, tanto com constante quanto com tendência. Assim, conclui-se que não pode rejeitar a hipótese nula de que a série possui raiz unitária, ou seja, a série não é estacionária.  
+No caso da SELIC, o valor da estatística de teste também é menor do que o valor crítico, tanto com constante quanto com tendência. Assim, conclui-se que também não pode rejeitar a hipótese nula de que a série possui raiz unitária, ou seja, a série também não é estacionária.  
       
 <br>
 
