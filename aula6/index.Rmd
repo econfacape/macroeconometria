@@ -70,7 +70,7 @@ A quarta etapa é a **previsão**.
 
 <br>
 
-Considere a série temporal abaixo: dbgg: Dívida Bruta do Governo Geral (mensais-12/2006 a 02/2017).
+Considere a série temporal abaixo: O índice de Nível de Atividade do Banco Central (IBC-Br), disponível a partir de 2003. O IBC-Br se constitui em um indicador de periodicidade mensal que incorpora a trajetária das variáveis consideradas como proxies para o desempenho dos setores da economia. Dado que o PIB é calculado pelo IBGE é uma variável trimestral, logo existe procura para índices de base mensal que busquem medir o comportamento do nível de atividade. O IBC-Br atender esta demanda.
 
 ``` {r econ6_1}
 #Direcionado o R para o Diretorio a ser trabalhado
@@ -90,19 +90,20 @@ library(kableExtra)
 
 options(digits=4)
 
-divida <- read_excel("Divggnp_19032022.xls", col_types = 'numeric', sheet = "% PIB")
+dados_sgs <- GetBCBData::gbcbd_get_series(
+id = c("IBC-Br" = 24363, "IBC-BR SA" = 24364),
+first.date = "2003-01-01",
+format.data = "wide"
+)
+tail(dados_sgs)
 
-# Tratar DADOS #
-divida <- t(divida[-c(1:8, 58:73),-c(1)])
-divida <- ts(divida, start=c(2006,12), freq=12)
+ibc.br <- ts(dados_sgs[,-1], start=c(2003,01), freq=12)
 
-# Rotular
-colnames(divida) <- c(1:49)
-
-dbgg <- divida[,c(3)] #divida bruta do governo geral
-
-date <- seq(as.Date('2006-12-01'),to=as.Date("2022-01-01"),by='1 month')
-dbgg2 <- tibble(date,dbgg)
+par(mfrow=c(1,2))
+plot(ibc.br[,1], main='IBC-BR', xlab='', ylab='Número Indice')
+grid(col='grey0')
+plot(ibc.br[,2], main='IBC-BR SA', xlab='', ylab='Número Indice')
+grid(col='grey0')
 ```
 
 <br>
@@ -112,17 +113,10 @@ dbgg2 <- tibble(date,dbgg)
 <br>
 
 ``` {r econ6_2}
-# Grafico da Serie
-#Gráfico
-ggplot(data=dbgg2) +
-  geom_line(aes(x=date, y=dbgg), colour="darkblue", size=1.0) +
-  xlab('Meses do Ano') + ylab('% PIB') +
-  ggtitle('Trajetoria da Divida Bruta do Brasil (% do PIB)')
-
 ##Correlograma das series
 #Visualizando as duas funcoes - FAC e FACP
 
-ggtsdisplay(dbgg, main='Dívida Bruta do Governo Geral')
+ggtsdisplay(ibc.br[,2], main='O índice de Nível de Atividade do Banco Central (IBC-Br) - SA')
 ```
 
 Os Correlogramas da série em nível, mostrado abaixo, indicam que a mesma não deve ser estacionária.
@@ -134,21 +128,29 @@ Os Correlogramas da série em nível, mostrado abaixo, indicam que a mesma não 
 <br>
 
 ``` {r econ6_3}
-##Correlograma das series
-#Visualizando as duas funcoes - FAC e FACP
 
 #Analise dos testes de raiz unitaria em nivel
 #Definicao do numero maximo de lags
-print(12*(length(dbgg)/100)^(1/4))
+print(12*(length(ibc.br[,2])/100)^(1/4))
 
 #Estatistica de Teste DFGLS para DCP
-dbgg.dfgls <- ur.ers(dbgg, type = c("DF-GLS"),
+ibc.dfgls <- ur.ers(ibc.br[,2], type = c("DF-GLS"),
                      model = c("trend"),
-                     lag.max = 2)
-summary(dbgg.dfgls)
+                     lag.max = 15)
+summary(ibc.dfgls)
 ```
 
-O teste de raiz unitária DF-GLS da série em nível, leva a seguinte conclusão de que a série não é estacionária em nível.
+``` {r econ6_4}
+#Estatistica de Teste DFGLS para DCP
+ibc3.dfgls <- ur.ers(ibc.br[,2], type = c("DF-GLS"),
+                     model = c("trend"),
+                     lag.max = 3)
+summary(ibc3.dfgls)
+```
+
+<br>
+
+O teste de raiz unitária DF-GLS da série em nível, leva a  conclusão de que a série não é estacionária em nível. Não rejeita a hipótese nula de que possui raiz unitária.
 
 <br>
 
@@ -156,25 +158,25 @@ O teste de raiz unitária DF-GLS da série em nível, leva a seguinte conclusão
 
 <br>
 
-``` {r econ6_4}
+``` {r econ6_5}
 #Diferenciacao da Serie
-ddbgg <- diff(dbgg)
+dibc <- diff(ibc.br[,2])
 
 ##Correlograma das series na 1 Diferença
 #Visualizando as duas funcoes - FAC e FACP
 
-ggtsdisplay(ddbgg, main='Dívida Bruta do Governo Geral')
+ggtsdisplay(dibc, main='Nível de Atividade do Banco Central')
 
 
 # Teste de Raiz Unitária
 
-ddbgg.dfgls <- ur.ers(ddbgg, type = c("DF-GLS"),
+dibc.dfgls <- ur.ers(dibc, type = c("DF-GLS"),
                       model = c("constant"),
-                      lag.max = 2)
-summary(ddbgg.dfgls)
+                      lag.max = 3)
+summary(dibc.dfgls)
 ```
 
-Os Correlogramas da série na primeira diferença, mostrado abaixo, indicam que a mesma pode ser estacionária.  O teste de raiz unitária DF-GLS com a variável dbgg na primeira diferença leva a conclusão de que considerando uma significância de 10\%, rejeita a Hipótese Nula de que a série possui raiz unitária, ou seja, a série é estacionária. 
+Os Correlogramas da série na primeira diferença, mostrado abaixo, indicam que a mesma pode ser estacionária.  O teste de raiz unitária DF-GLS com a variável ibc.br na primeira diferença leva a conclusão de que, considerando uma significância de 10\%, rejeita a Hipótese Nula de que a série possui raiz unitária, ou seja, a série é estacionária. 
 
 Existem duas formas de estimação, uma delas é observando o correlograma e a outra é usando a função `` auto.arima``.
 
@@ -184,26 +186,25 @@ Existem duas formas de estimação, uma delas é observando o correlograma e a o
 
 <br>
 
-``` {r econ6_5}
-auto.arima <- auto.arima(dbgg, max.p=10, max.d=1, max.q=10, trace=TRUE)
+``` {r econ6_6}
+auto.arima <- auto.arima(ibc.br[,2], max.p=10, max.d=1, max.q=10, trace=TRUE)
 summary(auto.arima)
 coeftest(auto.arima)
 ```
 
 Após a estimação do modelo é possível visualizar a série observada e a estimada! 
 
-``` {r econ6_6}
+``` {r econ6_7}
 #Visualizacao das duas series - observada e a estimada
-plot(dbgg)
+plot(ibc.br[,2])
 lines(fitted(auto.arima), col='red')
 legend('topleft', col=c('black','red'), lty=c(1,1), lwd=c(2,2),
-       legend=c('DBGG', 'DBGG-Estimado'))
-
+       legend=c('IBC/SA', 'IBC/SA-Estimado'))
 ```
 
 Pode-se então, realizar as análises nos resíduos do modelo estimado.
 
-``` {r econ6_7}
+``` {r econ6_8}
 #Analise dos residuos do ARIMA
 plot(auto.arima$residuals)
 
@@ -226,7 +227,7 @@ shapiro.test(auto.arima$residuals)
 
 <br>
 
-``` {r econ6_8}
+``` {r econ6_9}
 #E possivel fazer previsoes com os resultados
 forecast.arima <- forecast(auto.arima, h=12, level=c(20, 40, 60)) 
 #level é o intervalo de confianca da previsao
@@ -235,27 +236,28 @@ forecast.arima
 
 #Grafico da previsao
 autoplot(forecast.arima)+
-  ggtitle('Previsão do Arima (1,1,1)')
+  ggtitle('Previsão do Arima (0,1,1)')
 
 #Avaliacao da Previsao
-end(dbgg)
+end(ibc.br[,2])
 
-fim <- c(2021,7)
-amostra <- window(dbgg, end=fim)
-observado <- window(dbgg, start=fim+c(0,1))
+fim <- c(2022,11)
+amostra <- window(ibc.br[,2], end=fim)
+observado <- window(ibc.br[,2], start=fim+c(0,1))
 
 #Reestimacao do modelo
-arima2 <- Arima(amostra, order=c(1,1,1))
+arima2 <- Arima(amostra, order=c(0,1,1), include.drift=TRUE)
 coeftest(arima2)
-summary(arima2)
 
 #previsao com o novo modelo
-forecast.arima2 <- forecast(arima2, h=length(observado), level=20)$mean
+forecast.arima2 <- forecast(arima2, h=length(observado), level=0.95)$mean
+
+#Acurácia da Previsão
+accuracy(forecast.arima2, observado)
 
 #Comparação do observado com o estimado
 previsao <- tibble(forecast.arima2,observado)
-data2 <- c("Agosto/2021","Setembro/2021", "Outubro/2021", "Novembro/2021", 
-           "Dezembro/2021", "Janeiro/2022")
+data2 <- c("Dezembro/2022","Janeiro/2023", "Fevereiro/2023", "Março/2023", "Abril/2023", "Maio/2023")
 previsao <- tibble(data2, previsao)
 
 kable(previsao, align='ccc', col.names = c("Data Previsão", 
