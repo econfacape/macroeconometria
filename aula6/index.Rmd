@@ -241,7 +241,7 @@ autoplot(forecast.arima)+
 #Avaliacao da Previsao
 end(ibc.br[,2])
 
-fim <- c(2022,11)
+fim <- c(2023,01)
 amostra <- window(ibc.br[,2], end=fim)
 observado <- window(ibc.br[,2], start=fim+c(0,1))
 
@@ -257,7 +257,7 @@ accuracy(forecast.arima2, observado)
 
 #Comparação do observado com o estimado
 previsao <- tibble(forecast.arima2,observado)
-data2 <- c("Dezembro/2022","Janeiro/2023", "Fevereiro/2023", "Março/2023", "Abril/2023", "Maio/2023")
+data2 <- c("Fevereiro/2023", "Março/2023", "Abril/2023", "Maio/2023", "Junho/2023", "Julho/2023")
 previsao <- tibble(data2, previsao)
 
 kable(previsao, align='ccc', col.names = c("Data Previsão", 
@@ -265,3 +265,206 @@ kable(previsao, align='ccc', col.names = c("Data Previsão",
                                            "Valores Observados")) %>% 
   kable_styling(full_width=TRUE, position = "center")
 ```
+
+
+<br>
+
+# Outra forma de fazer as estimações
+
+<br>
+
+``` {r econ6_10}
+library(feasts)
+library(fabletools)
+library(fable)
+library(tsibble)
+library(tsibbledata)
+library(rbcb)
+
+# ibc-br
+ibc_br <- rbcb::get_series(
+  code = c("ibc.sa" = 24364), 
+  start_date = "2003-01-01",
+  end_date = "2023-07-01"
+)  |> 
+  # é necessário alterar o tipo da coluna de data para yearmonth
+  dplyr::mutate(date = tsibble::yearmonth(date)) |> 
+  # transforma a classe para tsibble
+  tsibble::as_tsibble(index = date)
+
+ibc_br|> fabletools::autoplot()
+```
+
+<br>
+
+## Identificação do Modelo
+
+<br>
+
+### Verificando a distribuição, tendência e sazonalidade
+
+<br>
+
+```{r}
+# Gráfico de histograma do IBC-BR SA
+ibc_br |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(x = ibc.sa) +
+  ggplot2::geom_histogram()
+```
+
+```{r}
+# Gráfico de boxplot do IPCA
+ggplot2::ggplot(ibc_br, ggplot2::aes(x = ibc.sa)) +
+  ggplot2::geom_boxplot()
+```
+
+```{r}
+# Calcula o ACF do IPCA e Plota
+feasts::ACF(ibc_br, y = ibc.sa, lag_max = 36) |> 
+  fabletools::autoplot() +
+  ggplot2::labs(title = "Função de Autocorrelação do IBC-BR SA a.m%")
+
+# Calcula o PACF do IPCA e Plota
+feasts::PACF(ibc_br, y = ibc.sa, lag_max = 36) |> 
+  fabletools::autoplot() +
+  ggplot2::labs(title = "Função de Autocorrelação Parcial do IBC-BR SA a.m%")
+```
+
+```{r}
+feasts::gg_tsdisplay(ibc_br, y = ibc.sa, plot_type = "partial")
+```
+
+```{r}
+feasts::gg_subseries(ibc_br, ibc.sa)
+```
+
+#```{r}
+#feasts::gg_lag(ibc_br, ibc.sa, geom = "point")
+#```
+
+<br>
+
+### Verificando a estacionariedade
+
+<br>
+
+```{r}
+unitroot_ndiffs(ibc_br$ibc.sa)
+unitroot_nsdiffs(ibc_br$ibc.sa) #numero de diferenciaçoes sazonais
+```
+
+<br>
+
+## Estimação do Modelo
+
+<br>
+
+```{r}
+fit_arima <- ibc_br %>%
+  fabletools::model(
+    arima_auto = fable::ARIMA(ibc.sa)
+    )
+
+# Resultados agregados
+fabletools::tidy(fit_arima)
+```
+
+<br>
+
+## Diagnóstico do Modelo
+
+<br>
+
+```{r}
+# ARIMA(1, 0, 0): Correlograma ACF e Distribuição
+fit_arima %>%
+  dplyr::select(arima_auto) %>%
+  feasts::gg_tsresiduals()
+
+# ARIMA(0, 1, 1): teste de autocorrelação Ljung-Box
+fit_arima %>%
+  dplyr::select(arima_auto) %>%
+  fabletools::augment() %>%
+  fabletools::features(.innov, feasts::ljung_box, lag = 24, dof = 1)
+```
+
+<br>
+
+## Previsões
+
+<br>
+
+### Restrição da amostra (teste e treino)
+
+<br>
+
+```{r}
+# Restringir dados (amostra de treino)
+dados_treino <- ibc_br %>%
+  dplyr::slice(1:(dplyr::n() - 12))
+
+# Dados usados para comparar previsão (amostra de teste)
+dados_teste <- ibc_br %>%
+  dplyr::filter(date > max(dados_treino$date))
+
+# Reestimar modelos com restrição de amostra
+fit_arima_treino <- dados_treino %>%
+  fabletools::model(
+    arima011 = fable::ARIMA(ibc.sa ~ 1 + pdq(0, 1, 1))
+    )
+
+# Previsões do ARIMA
+fc_arima <- fit_arima_treino %>%
+  fabletools::forecast(h = 12)
+
+# Plotando as previsões vs. observado
+fc_real <- fc_arima |> 
+  as_tsibble() |> 
+  dplyr::select(ibc_br = .model, values = .mean) |> 
+  dplyr::bind_rows(dados_teste |>
+                     tidyr::pivot_longer(!date, names_to = "ibc.sa", values_to = "values")
+                   ) 
+
+fc_real |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(x = date, y = values, color = ibc.sa) +
+  ggplot2::geom_line(size = 1.5) +
+  ggplot2::labs(title = "IBC-BR SA observado vs. previsto")
+```
+
+<br>
+
+### Acurácia
+
+<br>
+
+```{r}
+fabletools::accuracy(fc_arima, dados_teste)
+```
+
+<br>
+
+### Previsão Fora da Amostra
+
+<br>
+
+```{r}
+# Reestimar modelos com restrição de amostra
+fit_arima_full <- ibc_br %>%
+  fabletools::model(
+    arima011 = fable::ARIMA(ibc.sa ~ 1 + pdq(0, 1, 1))
+    )
+
+# Previsões do ARIMA
+fc_arima_full <- fabletools::forecast(fit_arima_full, h = 12)
+
+# Visualizar previsões
+fabletools::autoplot(
+  object = fc_arima_full,
+  data   = dplyr::slice_tail(ibc_br, n = 36),
+  size   = 1
+  )
+```
+
+<br>
