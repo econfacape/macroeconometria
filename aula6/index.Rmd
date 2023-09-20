@@ -293,6 +293,7 @@ ibc_br <- rbcb::get_series(
   tsibble::as_tsibble(index = date)
 
 ibc_br|> fabletools::autoplot()
+# |> é um operador nativo do R, usa o resultado do seu lado esquerdo como primeiro argumento da função do lado direito.
 ```
 
 <br>
