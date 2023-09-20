@@ -66,7 +66,7 @@ A quarta etapa é a **previsão**.
 
 <br>
 
-## Estimação no R - Metodologia de Box-Jenkins
+# Estimação no R - Metodologia de Box-Jenkins
 
 <br>
 
@@ -422,7 +422,7 @@ fc_arima <- fit_arima_treino %>%
 # Plotando as previsões vs. observado
 fc_real <- fc_arima |> 
   as_tsibble() |> 
-  dplyr::select(ibc_br = .model, values = .mean) |> 
+  dplyr::select(ibc.sa = .model, values = .mean) |> 
   dplyr::bind_rows(dados_teste |>
                      tidyr::pivot_longer(!date, names_to = "ibc.sa", values_to = "values")
                    ) 
@@ -443,6 +443,8 @@ fc_real |>
 ```{r}
 fabletools::accuracy(fc_arima, dados_teste)
 ```
+
+Em relação a acurácia dos modelos usando o R, [clique aqui](https://analisemacro.com.br/economia/macroeconometria/avaliando-previsoes-com-o-r/) para ler um post bastante útil. 
 
 <br>
 
@@ -467,5 +469,7 @@ fabletools::autoplot(
   size   = 1
   )
 ```
+
+
 
 <br>
