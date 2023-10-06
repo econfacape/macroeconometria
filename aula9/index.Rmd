@@ -163,6 +163,8 @@ library(FinTS)
 library(scales)
 library(uroot)
 library(fGarch)
+library(rugarch)
+library(PerformanceAnalytics)
 
 options(digits=4)
 #options(scipen = 999)
@@ -302,6 +304,113 @@ plot(resid.garch, type="l", col=1)
 
 #Ver se os res?duos sao ruido branco
 ggtsdisplay(resid.garch, main='Residuos do GARCH')
-
-
 ```
+
+
+<br>
+
+# Estimação do modelo ARCH - 2
+
+<br>
+
+``` {r econ9_5, warning=FALSE, message=FALSE }
+# Calcula os retornos contínuos
+date <- seq.Date(as.Date('2012-01-01'), by = 'week', length.out = length(preco_tommy))
+preco_tommy <- xts(x=preco_tommy, order.by = date)
+retorno <- preco_tommy |> 
+    PerformanceAnalytics::Return.calculate(method = "log") |> 
+    na.omit()
+
+autoplot(retorno)
+```
+
+
+```{r econ9_6, warning=FALSE, message=FALSE}
+# Adiciona uma coluna de log retorno
+library(tsibbledata)
+library(fable)
+library(feasts)
+library(fabletools)
+
+retorno_quad = retorno^2
+
+ggtsdisplay(retorno)
+ggtsdisplay(retorno_quad)
+
+# Verificaçao de retornos sao autocorrelacioandos
+#H0: a série é distribuida de forma independente
+#Ha> a serie apresenta correlaçao serial
+Box.test(retorno, lag = 12, type = 'Ljung')
+
+#Verificacao da média do retorno se é igual a zero
+#H0: media é igual a zero
+t.test(as.vector(retorno))
+
+# Utilizar $aretono^2$ para verificar se existe heterocedasticidade condicional, o chamado **efeito ARCH**.
+
+y <- retorno - mean(retorno)
+y_quad <- y^2
+Box.test(y_quad, lag = 12, type = 'Ljung')
+
+forecast::Acf(y_quad)
+```
+
+# Estimação do modelo ARCH - 2
+
+O modelo pode ser construído por meio do pacote `rugarch` em duas etapas:
+ 
+ - Especificação do modelo com a função `ugarchspec`
+ - Estimação com a função `ugarchfit`
+ 
+Na primeira etapa, os critérios devem ser escolhidos:
+
+ - `mean.model`: uma lista contendo a ordem do modelo ARMA e se há a inclusão ou não de um modelo para a média (A escolha da ordem 0,0 define uma média constante)
+ 
+ - `variance.model`: uma lista contendo o tipo do modelo e a ordem do modelo. Note que `sGARCH` significa `standard` e (1,0) define um modelo `ARCH`.
+ 
+ - `distribution.model`: o tipo de distribuição escolhido no model.
+ 
+Para cada parâmetro existe uma opção definida de acordo com a liteturatura conhecida do modelo, seja a escolha da estimação da média, da variância e da distribuição. Para mais detalhes, é necessário ler a documentação usando `?ugarchespec`.
+
+Definido a especificação do modelo, é necessário estimar utilizando `ugarchfit`, em que os dois parâmetros mais importantes são `data` para dados (a classe deve ser numeric vector, matrix, data.frame, zoo, xts, timeSeries, ts ou irts) e `spec` para especificação.
+
+
+```{r econ9_7, warning=FALSE, message=FALSE}
+
+archspec <- rugarch::ugarchspec(mean.model = list(armaOrder = c(0,0), include.mean = FALSE),
+                        variance.model = list(model = "sGARCH",
+                                              garchOrder = c(1,0)),
+                        distribution.model = "norm")
+
+archfit <- rugarch::ugarchfit(data = retorno, spec = archspec)
+
+archfit
+
+coef(archfit)
+```
+
+# Previsão do modelo ARCH
+
+```{r econ9_9, warning=FALSE, message=FALSE}
+# Previsão Fora da Amostra
+archforecast <- ugarchforecast(fitORspec = archfit, n.ahead = 4)
+
+sigma(archforecast)
+```
+
+# Estimação do modelo GARCH - 2
+
+```{r econ9_8, warning=FALSE, message=FALSE}
+
+garchspec <- rugarch::ugarchspec(mean.model = list(armaOrder = c(0,0), include.mean = TRUE),
+                        variance.model = list(model = "sGARCH", garchOrder = c(1,1)),
+                        distribution.model = "norm")
+
+garchfit <- rugarch::ugarchfit(data = retorno, spec = garchspec)
+
+garchfit
+
+coef(garchfit)
+```
+
+
