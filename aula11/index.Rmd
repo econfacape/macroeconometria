@@ -105,41 +105,15 @@ $$
 $$
 <br>
 
-se a equação acima for multiplicada pela inversa da Matriz A, ou seja,
+É assumido que os **erros estruturais**, representados por $\epsilon_t$, são um ruído branco e que a matriz de coeficientes $B^*$ corresponde aos coeficientes estruturais, que irão diferir da forma reduzida representada anteriormente (Aula 10) se $A \neq I$, onde $I$ é a matriz-identidade. Tem-se o denominado VAR estrutural ou SVAR. Se $A = I$, tem-se a exclusão dos efeitos contemporâneos entre as variáveis e se volta no VAR padrão. 
 
-<br>
+Apesar do modelo VAR padrão conseguir captar as características dinâmicas de séries temporais multivariadas, identifica-se a necessidade de transformar a matriz de variância e covariâncias dos erros para se ter choques ortogonais, isto é, não correlacionados, para a análise correta das funções de impulso-resposta e decomposição do erro de previsão.
 
-$$
-A^{-1}=\left[\begin{array}{cc}
-	1 & \delta_2\\
-	\delta_1 & 1
-	\end{array}\right]^{-1}= 	\frac{1}{1-\delta_1\delta_2}\left[\begin{array}{cc}
-	1 & -\delta_1\\
-	-\delta_2 & 1
-	\end{array}\right]
-$$ 
+Quando os erros são contemporaneamente correlacionados, os coeficientes não refletem de forma adequada os efeitos dos choques nas variáveis do sistema. Assim, os erros devem ser ortogonalizados de modo a apresentarem matriz de variâncias e covariâncias diagonal (ausência de covariância). 
 
-<br>
+A ortogonalização consiste em uma transformação dos erros gerando outro vetor de erros com matriz de variâncias e covariâncias diagonal. No entanto, esta transformação envolve modificar todo o modelo, o que traz consequências para o relacionamento contemporâneo entre as variáveis.
 
-De onde se obtém
-
-<br>
-
-$$
-y_t=a+By_{t-1}+e_t,
-$$
-
-<br>
-
-a chamada forma reduzida, em que $a=A^{-1}\alpha$, $B=A^{-1}B^*$ e $e_t=A^{-1}\epsilon_t$
-
-Apesar do modelo VAR conseguir captar as características dinâmicas de séries temporais multivariadas, identifica-se a necessidade de transformar a matriz de variância e covariâncias dos erros para se ter choques ortogonais, isto é, não correlacionados, para a análise correta das funções de impulso-resposta e decomposição do erro de previsão.
-
-Quando os erros são contemporaneamente correlacionados os coeficientes não refletem de forma adequada os efeitos dos choques nas variáveis do sistema. Assim, os erros devem ser ortogonalizados de modo a apresentarem matriz de variâncias e covariâncias diagonal (ausência de covariância). 
-
-A ortogonalização consiste em uma transformação dos erros gerando outro vetor de erros com matriz de variâncias e covariâncias diagonal. No entanto, esta transformação envolve modificar todo o modelo o que traz consequências para o relacionamento contemporâneo entre as variáveis.
-
-Considere $e_t$ os choques/inovações originais do VAR (erros correlacionados): 
+Considere $e_t$ os choques/inovações originais do VAR padrão (erros correlacionados): 
 
 $$
 Var-Cov(e_t) = E(e_te_t')= \Omega
@@ -155,8 +129,6 @@ $$
 	\sigma_{21} & \sigma^2_2
 	\end{array}\right]
 $$
-<br>
-
 <br>
 
 É necessária um transformação em $e_t$, multiplicando o por uma matriz P:
@@ -208,7 +180,7 @@ b) Tem que ter determinante diferente de zero (não singular)
 
 c) Fornecer uma $\mu_t$ ortogonal
 
-Quando se multiplica o modelo VAR por P se tem um novo modelo, com um novo erro $\mu_t$ e com o lado esquerdo da equação incorporando relações contemporâneas entre as variáveis do sistema. Tal modelo é conhecido como VAR Estrutural que permite a análise de funções impulso-resposta ortogonais, decomposição da variância do erro de previsão e estimativas de coeficientes de relações contemporâneas entre as variáveis. 
+O modelo VAR multiplicado por P é um novo modelo, com um novo erro $\mu_t$ e com o lado esquerdo da equação incorporando relações contemporâneas entre as variáveis do sistema. É conhecido como VAR Estrutural, que permite a análise de funções impulso-resposta ortogonais, decomposição da variância do erro de previsão e estimativas de coeficientes de relações contemporâneas entre as variáveis. 
 
 Existem várias opções de P. Uma delas é a **Decomposição de Cholesky**. Qual a necessidade de fazer decomposição de Cholesky? Observe que na forma estrutural existem 10 parametros para serem estimados: 8 coeficientes e mais 2 variâncias de erros. 
 
@@ -248,9 +220,9 @@ $$
 
 em que $a=A^{-1}\alpha$, $B=A^{-1}B^*$ e $e_t=A^{-1}\epsilon_t$.
 
-Para se ter **identificação** é preciso impor restrições no sistema estrutural. O número de restrições necessário para alcançar identificação depende da relação entre o número de coeficientes estimados na forma reduzida e o número de coeficientes a serem obtidos na forma estrutural; é um problema de número de incógnitas e de número de equações (relações). 
+Para se ter **identificação** é preciso impor restrições no sistema estrutural (matriz A). O número de restrições necessário para alcançar identificação depende da relação entre o número de coeficientes estimados na forma reduzida e o número de coeficientes a serem obtidos na forma estrutural; é um problema de número de incógnitas e de número de equações (relações). 
 
-Uma solução para isto é usar a decomposição de Cholesky forçando que o triangulo superir seja igual a zero. Contudo, com dados reais o recomendado é que se use a Teoria Econômica para definir as restrições. 
+Uma solução para isto é usar a **decomposição de Cholesky** forçando que o triangulo superior seja igual a zero. Contudo, com dados reais o recomendado é que se use a Teoria Econômica para definir as restrições. 
 
 <br>
 
@@ -280,17 +252,17 @@ em que $a_t=A^{-1}Bu_t$ ou $Aa_t=Bu_t$, um VAR padrão. Observe que $a_t$ são o
 
 Para conseguir a partir das estimativas da matriz de variância e covariância de $a$ obter as estimativas dos coeficientes de **A** e **B** do modelo estrutural é preciso impor restrições nas matrizes **A** e **B**. O número de restrições necessário para alcançar identificação depende da relação entre o número de coeficientes estimados na forma reduzida e o número de coeficientes a serem obtidos na forma estrutural. É um problema de número de incógnitas e de número de equações (relações) semelhante à condição de ordem em equações simultâneas.
 
-Elementos a serem identificados: Temos $k^2$  elementos de A mais k elementos da matriz B (diagonal) de variâncias dos erros do modelo estrutural, dando um total de  $k^2+k$. Contudo, impondo-se a restrição de que a matriz de relações contemporâneas tenha $1's$  na diagonal, tem-se $(k^2-k)+k=k^2$ valores desconhecidos no modelo estrutural. 
+**Elementos a serem identificados:** Temos $k^2$  elementos de A mais k elementos da matriz B (diagonal) de variâncias dos erros do modelo estrutural, dando um total de  $k^2+k$ (k é uma das dimensões da matriz A ou B). Contudo, impondo-se a restrição de que a matriz de relações contemporâneas tenha $1's$  na diagonal, tem-se $(k^2-k)+k=k^2$ valores desconhecidos no modelo estrutural. 
 
-Elementos observados/estimados: São os valores da matriz de variâncias e covariâncias dos erros $(\hat \Omega)$ do modelo VAR padrão (forma reduzida). Esta matriz é simétrica e terá $(k^2+k)/2$ elementos livres. 
+**Elementos observados/estimados:** São os valores da matriz de variâncias e covariâncias dos erros $(\hat \Omega)$ do modelo VAR padrão (forma reduzida). Esta matriz é simétrica e terá $(k^2+k)/2$ elementos livres. 
 
-Identificação: Para identificar $(k^2)$  coeficientes desconhecidos a partir dos $(k^2+k)/2$ valores de $(\hat \Omega)$, será necessário impor $k^2-[(k^2+k)/2]=(k^2-k)/2$ restrições adicionais no sistema. 
+**Identificação:** Para identificar $(k^2)$  coeficientes desconhecidos a partir dos $(k^2+k)/2$ valores de $(\hat \Omega)$, será necessário impor $k^2-[(k^2+k)/2]=(k^2-k)/2$ restrições adicionais no sistema. 
 
-As restrições são impostas na matriz $A$. Para a maioria dos problemas são restrições de exclusão com zeros nas posições que representam ausência de relação contemporânea, ou seja, nas posições de coeficientes que não serão estimados. 
+As restrições são impostas na matriz $A$. Para a maioria dos problemas são **restrições de exclusão com zeros nas posições que representam ausência de relação contemporânea**, ou seja, nas posições de **coeficientes que não serão estimados**. 
 
 Três situações com relação à condição de identificação do sistema: 
 
-a)	Sistema exatamente identificado – quando o número de restrições em $A$ for igual a (k^2-k)/2,
+a)	Sistema exatamente identificado – quando o número de restrições em $A$ for igual a $(k^2-k)/2$,
 
 b)	Sistema superidentificado – quando o número de restrições for maior que $(k^2-k)/2$,
 
@@ -301,39 +273,30 @@ O sistema estrutural é estimável ou identificado quando for exatamente identif
 Com base em $Aa_t=Bu_t$ e dependendo das restrições impostas, três tipos de modelos SVAR podem ser definidos:
 
 <br>
-
 **MODELO A**
-
 <br>
 
-Neste modelo a idéia é modelar as relações contemporâneas entre as variáveis diretamente pela matriz $A$ considerando $B=I_k$, isto é:
-
-<br>
+A idéia é modelar as relações contemporâneas entre as variáveis diretamente pela matriz $A$ considerando $B=I_k$, isto é:
 
 $$
 Aa_t=u_t
 $$
-<br>
 
 o que reduz o número de valores desconhecidos de $2k^2$ para $k^2$, pois só tem-se a matriz A a ser identificada. Assim, o número mínimo de restrições para identificação será $k(k−1)/2$.
 
 <br>
-
 **MODELO B**
-
 <br>
 
-Neste modelo, ao invés de modelar diretamente as relações contemporâneas entre as variáveis, especifica-se as relações entre os erros identificando-se os choques estruturais diretamente pelos choques da forma reduzida. A matriz $A$ é considerada identidade, isto é, $A=I_k$. Logo,
+Ao invés de modelar diretamente as relações contemporâneas entre as variáveis, especifica-se as relações entre os erros identificando-se os choques estruturais diretamente pelos choques da forma reduzida. A matriz $A$ é considerada identidade, isto é, $A=I_k$. Logo,
 
 $$
 a_t=Bu_t
 $$
+
+ou seja, os erros da forma reduzida são funções lineares dos erros estruturais. O número mínimo de restrições para identificação também é $k(k−1)/2$.
+
 <br>
-
-Ou seja, os erros da forma reduzida são funções lineares dos erros estruturais. O número mínimo de restrições para identificação também é $k(k−1)/2$.
-
-<br>
-
 **MODELO AB**
 <br>
 
@@ -346,12 +309,6 @@ $$
 Como A e B têm $k^2$ elementos cada, tem-se que impor no mínimo $k2+k(k−1)/2$ restrições para identificação.
 
 <br>
-
-## Restrições de longo prazo à la Blanchard-Quah
-
-<br>
-
-Blanchard e Quah (1989) propõem uma abordagem, que não requer a imposição direta de restrições nas matrizes estruturais A ou B. Em vez disso, as inovações estruturais podem ser identificadas observando os efeitos acumulados dos choques e colocando zero restrições nessas relações acumuladas, que morrem e se tornam zero no longo prazo.
 
 # Estimação
 
@@ -392,7 +349,7 @@ O pacote ``vars``  (Pfaff, 2008) fornece funções para estimar VARs estruturais
 <br>
 
 ```{r econ11_1, warning=FALSE, message=FALSE }
-# https://www.r-econometrics.com/timeseries/svarintro/
+# https://www.r-econometrics.com/timeseries/SVARintro/
 
 library(vars)
 
@@ -441,21 +398,21 @@ O modelo A requer a especificação de uma matriz Amat, que contém as restriç�
 a <- diag(1, 3)
 a[lower.tri(a)] <- NA
 
-svar_est_a <- SVAR(var_est, Amat = a, max.iter = 1000)
+SVAR_est_a <- SVAR(var_est, Amat = a, max.iter = 1000)
 
-svar_est_a
+SVAR_est_a
 ```
 
 O resultado não é igual à matriz B, pois estimou-se um modelo A. Para traduzi-lo nos coeficientes estruturais do modelo B, basta obter o inverso da matriz:
 
 ```{r econ11_3, warning=FALSE, message=FALSE }
-solve(svar_est_a$A)
+solve(SVAR_est_a$A)
 ```
 
-Os intervalos de confiança para os coeficientes estruturais podem ser obtidos acessando diretamente o respectivo elemento em svar_est_a:
+Os intervalos de confiança para os coeficientes estruturais podem ser obtidos acessando diretamente o respectivo elemento em SVAR_est_a:
 
 ```{r econ11_4, warning=FALSE, message=FALSE }
-svar_est_a$Ase
+SVAR_est_a$Ase
 ```
 
 <br>
@@ -470,11 +427,12 @@ b <- diag(1, 3)
 b[lower.tri(b)] <- NA
 
 # Estimate
-svar_est_b <- SVAR(var_est, Bmat = b)
+SVAR_est_b <- SVAR(var_est, Bmat = b)
 
 # Show result
-svar_est_b
+SVAR_est_b
 
 # Confidence Intervals of the structural coefficients 
-svar_est_b$Bse
+SVAR_est_b$Bse
 ```
+
