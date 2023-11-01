@@ -1895,10 +1895,13 @@ seguir, cria-ses uma matriz diagonal com uns como elementos diagonais e
 zeros em seu triângulo superior. Os elementos triangulares inferiores
 são definidos como NA, o que indica que eles devem ser estimados.</p>
 <pre class="r"><code># Estimate structural coefficients
-a &lt;- diag(1, 3)
-a[lower.tri(a)] &lt;- NA
+amat &lt;- matrix(c(1,0,0,
+                 NA,1,0,
+                 NA,NA,1),
+               byrow = TRUE,
+               ncol = 3)
 
-SVAR_est_a &lt;- SVAR(var_est, Amat = a, max.iter = 1000)
+SVAR_est_a &lt;- SVAR(var_est, Amat = amat, max.iter = 1000)
 
 SVAR_est_a</code></pre>
 <pre><code># 
@@ -1932,11 +1935,14 @@ obtidos acessando diretamente o respectivo elemento em SVAR_est_a:</p>
 especificando uma matriz Bmat, que contém restrições na matriz
 estrutural B. No exemplo a seguir, B é igual a Amat acima.</p>
 <pre class="r"><code># Create structural matrix with restrictions
-b &lt;- diag(1, 3)
-b[lower.tri(b)] &lt;- NA
+bmat &lt;- matrix(c(1,0,0,
+                 NA,1,0,
+                 NA,NA,1),
+               byrow = TRUE,
+               ncol = 3)
 
 # Estimate
-SVAR_est_b &lt;- SVAR(var_est, Bmat = b)
+SVAR_est_b &lt;- SVAR(var_est, Bmat = bmat)
 
 # Show result
 SVAR_est_b</code></pre>
@@ -1956,6 +1962,43 @@ SVAR_est_b$Bse</code></pre>
 # S1 0.00000000 0.00000000  0
 # S2 0.04472136 0.00000000  0
 # S3 0.04686349 0.04472136  0</code></pre>
+<p><strong>Modelo AB</strong></p>
+<p>Os modelos AB são estimados de maneira semelhante aos modelos A e B,
+especificando uma matriz Amat e uma Bmat, que contém restrições nas
+matrizes estruturais A e B.</p>
+<pre class="r"><code>amat &lt;- matrix(c(1,0,0,
+                 NA,1,0,
+                 0,0,1),
+               byrow = TRUE,
+               ncol = 3)
+
+bmat &lt;- matrix(c(1,0,0,
+                 0,1,0,
+                 NA,NA,1),
+               byrow = TRUE,
+               ncol = 3)
+
+
+SVAR_est_ab &lt;- SVAR(var_est, Amat=amat, Bmat = bmat)
+
+# Show result
+SVAR_est_ab</code></pre>
+<pre><code># 
+# SVAR Estimation Results:
+# ======================== 
+# 
+# 
+# Estimated A matrix:
+#        S1 S2 S3
+# S1 1.0000  0  0
+# S2 0.1818  1  0
+# S3 0.0000  0  1
+# 
+# Estimated B matrix:
+#         S1     S2 S3
+# S1  1.0000 0.0000  0
+# S2  0.0000 1.0000  0
+# S3 -0.1077 0.3132  1</code></pre>
 </div>
 </div>
 
