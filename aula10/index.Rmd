@@ -796,3 +796,114 @@ As hipóteses nulas são que x não causa a Granger y na primeira equação e qu
 causality(model1)$Granger
 ```
 <br>
+
+## Exemplo Análise Macro
+
+``` {r econ10_11, warning=FALSE, message=FALSE }
+# https://analisemacro.com.br/data-science/o-ovo-ou-a-galinha-teste-de-causalidade-de-granger-na-granja
+# Causalidade de Granger
+
+# Pacotes ---------
+
+# Carregar pacotes
+library(lmtest)
+library(magrittr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(scales)
+library(ggtext)
+library(purrr)
+library(forecast)
+library(tsibble)
+library(downloader)
+
+
+# Dados ---------
+
+# Dataset de ovos/galinhas (veja documentação ?lmtest::ChickEgg)
+dados <- lmtest::ChickEgg
+dados_tbl <- dados %>%
+  dplyr::as_tibble() %>%
+  dplyr::mutate(
+    date = seq(from = tsp(dados)[1], to = tsp(dados)[2], by = tsp(dados)[3])
+    )
+
+# Visualização dos dados
+dados_tbl %>%
+  tidyr::pivot_longer(cols = -"date") %>%
+  dplyr::mutate(
+    name = dplyr::recode(name, "chicken" = "Galinhas", "egg" = "Ovos")
+    ) %>%
+  ggplot2::ggplot() +
+  ggplot2::aes(x = date, y = value, color = name) +
+  ggplot2::geom_line(size = 1, show.legend = FALSE) +
+  ggplot2::facet_wrap(facets = ~name, scales = "free") +
+  ggplot2::scale_y_continuous(
+    labels = scales::label_number(big.mark = ".", decimal.mark = ",")
+    ) +
+  ggplot2::scale_color_manual(values = c("#282f6b", "#b22200")) +
+  ggplot2::labs(
+    title    = "O que veio primeiro, o ovo ou a galinha?",
+    subtitle = "Séries anuais de população de galinhas em 1º de dezembro e produção de milhões de dúzias de ovos nos EUA.",
+    y        = NULL,
+    x        = NULL,
+    caption  = "**Dados**: Zeileis e Hothorn (2002) | **Elaboração**: analisemacro.com.br"
+    ) +
+  ggplot2::theme_light() +
+  ggplot2::theme(
+    plot.title       = ggplot2::element_text(size = 20, face = "bold", color = "#282f6b"),
+    plot.subtitle    = ggplot2::element_text(size = 14),
+    plot.caption     = ggtext::element_textbox_simple(size = 10, margin = ggplot2::margin(10)),
+    axis.text        = ggplot2::element_text(size = 12, face = "bold"),
+    strip.background = ggplot2::element_blank(),
+    strip.text       = ggplot2::element_text(size = 12, face = "bold", color = "black")
+    )
+
+# Número de diferenças para tornar a série estacionária----------------------------
+dados_tbl <- tsibble::as_tsibble(dados_tbl, index = date)
+
+feasts::unitroot_ndiffs(dados_tbl$chicken)
+feasts::unitroot_ndiffs(dados_tbl$egg)
+
+# 3) Diferencia as séries
+dados_chk_diff <- diff(dados_tbl$chicken)
+dados_egg_diff <- diff(dados_tbl$egg)
+
+dados_diff <- cbind(dados_chk_diff, dados_egg_diff)
+
+dados_diff <- ts(
+  data      = dados_diff,
+  start     = 1931,
+  frequency = 1
+  )
+
+
+# Teste de causalidade de Granger -----------------------------------------
+
+# Aplicar o teste de Causalidade de Granger
+# H0: série X não Granger-causa série Y
+# H1: série X Granger-causa série Y
+lmtest::grangertest(
+  y     = dados_diff[, "dados_chk_diff"],
+  x     = dados_diff[, "dados_egg_diff"],
+  order = 4 # lags/defasagens, de 1:5 resultados são similares
+  )
+# p-valor deu 0.006414 -> hipótese nula rejeitada a 1% (há precedência temporal,
+# série X causa no sentido de Granger série Y ou "ovos precedem galinhas")
+```
+
+``` {r econ10_12, warning=FALSE, message=FALSE }
+
+# Teste em reverso
+lmtest::grangertest(
+  y     = dados_diff[, "dados_egg_diff"],
+  x     = dados_diff[, "dados_chk_diff"],
+  order = 4
+  )
+# p-valor deu 0.8881 -> falha-se em rejeitar a hipótese nula (não há precedência temporal,
+# série X não Granger causa série Y ou "galinhas não precedem ovos")
+
+```
+<br>
+
