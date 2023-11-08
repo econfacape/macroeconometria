@@ -797,7 +797,7 @@ causality(model1)$Granger
 ```
 <br>
 
-## Exemplo Análise Macro
+## Exemplo Análise Macro I
 
 ``` {r econ10_11, warning=FALSE, message=FALSE }
 # https://analisemacro.com.br/data-science/o-ovo-ou-a-galinha-teste-de-causalidade-de-granger-na-granja
@@ -902,8 +902,229 @@ lmtest::grangertest(
   order = 4
   )
 # p-valor deu 0.8881 -> falha-se em rejeitar a hipótese nula (não há precedência temporal,
-# série X não Granger causa série Y ou "galinhas não precedem ovos")
+# série X não causa no sentido de Granger a série Y ou "galinhas não precedem ovos")
 
 ```
+
+<br>
+
+## Exemplo Análise Macro II
+
+```{r econ10_13, warning=FALSE, message=FALSE }
+# https://analisemacro.com.br/data-science/dicas-de-rstats/analise-de-impulso-resposta-em-series-financeiras/
+
+# Pacotes -----------------------------------------------------------------
+
+# Carregar pacotes/dependências
+library(magrittr)   # CRAN v2.0.2
+library(GetBCBData) # CRAN v0.6
+library(ipeadatar)  # CRAN v0.1.6
+library(lubridate)  # CRAN v1.8.0
+library(tidyr)      # CRAN v1.2.0
+library(dplyr)      # CRAN v1.0.8
+library(tsibble)    # CRAN v1.1.1
+library(purrr)      # CRAN v0.3.4
+library(forecast)   # CRAN v8.16
+library(ggplot2)    # CRAN v3.3.5
+library(vars)       # CRAN v1.5-6
+
+# Dados -------------------------------------------------------------------
+
+# |-- Coleta e pré tratamento --|
+
+# PIB mensal - Valores correntes - R$ milhões (BCB)
+# Taxa de juros - Selic acumulada no mês anualizada base 252 - % a.a.
+# Índice Nacional de Preços ao Consumidor Amplo (IPCA) - 	% a.m.
+df_bcb <- GetBCBData::gbcbd_get_series(
+  id = c(
+    "pib_mensal" = 4380,
+    "selic"      = 4189,
+    "ipca"       = 433
+  ),
+  first.date = lubridate::ymd("2003-12-01"),
+  use.memoise = FALSE
+) %>%
+  tidyr::pivot_wider(
+    id_cols     = "ref.date",
+    names_from  = "series.name",
+    values_from = "value"
+  ) %>%
+  dplyr::rename("date" = "ref.date") %>%
+  dplyr::mutate(date = tsibble::yearmonth(.data$date))
+
+# Taxa de câmbio real bilateral - IPA-DI - BR/US: índice (média 2010 = 100)
+# Ibovespa - Índice de ações - Fechamento - Anbima - % a.m.
+# EMBI+ Risco-Brasil - ponto-base
+# Índice Nacional de Preços ao Consumidor Amplo (IPCA) - Índice (dez. 1993 = 100)
+codes_ipea <- c(
+  "ibovespa"    = "ANBIMA12_IBVSP12",
+  "cambio_real" = "GAC12_TCEREUA12",
+  "embi_br"     = "JPM366_EMBI366",
+  "ipca_indice" = "PRECOS12_IPCA12"
+)
+df_ipea <- ipeadatar::ipeadata(codes_ipea) %>%
+  tidyr::pivot_wider(
+    id_cols     = "date",
+    names_from  = "code",
+    values_from = "value"
+  ) %>%
+  dplyr::select("date", dplyr::all_of(codes_ipea)) %>%
+  dplyr::group_by(date = tsibble::yearmonth(.data$date)) %>%
+  dplyr::summarise(
+    dplyr::across(
+      .cols = !dplyr::any_of("date"),
+      .fns = ~mean(.x, na.rm = TRUE)
+    ),
+    .groups = "drop"
+  )
+
+
+# |-- Cruzar tabelas --|
+df_fin_macro <- dplyr::left_join(
+  x = df_ipea,
+  y = df_bcb,
+  by = "date"
+) %>%
+  dplyr::filter(lubridate::as_date(date) >= lubridate::ymd("2003-12-01")) %>%
+  tidyr::drop_na()
+
+
+
+# Deflacionamento ---------------------------------------------------------
+
+# Deflacionar séries nominais (note que para a SELIC é mais apropriado a
+# equação de Fisher, mas optamos por simplificar)
+df_fin_macro %<>%
+  dplyr::mutate(
+    dplyr::across(
+      .cols = c("pib_mensal", "ibovespa", "selic"),
+      .fns = ~ipca_indice[date == dplyr::last(date)] / ipca_indice * .x
+    )
+  ) %>%
+  dplyr::select(-"ipca_indice")
+
+# Número de diferenças para tornar a série estacionária----------------------------
+vars_ndiffs <- tsibble::as_tsibble(df_fin_macro, index = date)
+
+feasts::unitroot_ndiffs(vars_ndiffs$ibovespa)
+feasts::unitroot_ndiffs(vars_ndiffs$cambio_real)
+feasts::unitroot_ndiffs(vars_ndiffs$embi_br)
+feasts::unitroot_ndiffs(vars_ndiffs$pib_mensal)
+feasts::unitroot_ndiffs(vars_ndiffs$selic)
+feasts::unitroot_ndiffs(vars_ndiffs$ipca)
+```
+
+<br>
+
+Importante observar que existem séries que são I(0) e séries que são I(1), ou seja, não são integradas de mesma ordem, não sendo possível estimar um modelo VAR.
+
+<br>
+
+```{r econ10_14, warning=FALSE, message=FALSE }
+#Diferenciar as séries
+df_fin_macro_d <- data.frame(vars_ndiffs$date[-1])
+df_fin_macro_d$cambio_real <- diff(vars_ndiffs$cambio_real)
+df_fin_macro_d$embi_br <- diff(vars_ndiffs$embi_br)
+df_fin_macro_d$pib_mensal <- diff(vars_ndiffs$pib_mensal)
+df_fin_macro_d$selic <- diff(vars_ndiffs$selic)
+df_fin_macro_d$ibovespa <- vars_ndiffs$ibovespa[-1]
+df_fin_macro_d$ipca <- vars_ndiffs$ipca[-1]
+
+colnames(df_fin_macro_d)[1] <- "date"
+
+# Visualização de dados ---------------------------------------------------
+
+# Gráfico de linhas da séries
+df_fin_macro_d %>%
+  tidyr::pivot_longer(-"date") %>%
+  ggplot2::ggplot() +
+  ggplot2::aes(x = lubridate::as_date(date), y = value) +
+  ggplot2::geom_line() +
+  ggplot2::facet_wrap(~name, scales = "free")
+```
+
+<br>
+
+```{r econ10_15, warning=FALSE, message=FALSE }
+# Modelo VAR --------------------------------------------------------------
+
+df_fin_macro <- df_fin_macro_d
+
+# Seleção de defasagens VAR por critérios de informação
+lags_var <- vars::VARselect(
+  y       = df_fin_macro[-1],
+  lag.max = 12,
+  type    = "const"
+)
+
+lags_var
+
+# Estimar modelo VAR
+fit_var <- vars::VAR(
+  y       = df_fin_macro[-1],
+  p       = lags_var$selection["AIC(n)"],
+  type    = "const",
+  lag.max = 12,
+  ic      = "AIC"
+)
+
+
+# Resultados do VAR
+summary(fit_var)
+
+# Impulso Resposta --------------------------------------------------------
+
+# Obter os coeficientes de impulso resposta do VAR
+# Exemplo 1: choque na SELIC e resposta no IBOVESPA
+irf_var <- vars::irf(
+  x        = fit_var,
+  impulse  = "selic",
+  response = "ibovespa",
+  n.ahead  = 12
+)
+
+# Plotar gráfico de impulso resposta
+lags = 1:13
+
+df_irf <- data.frame(irf = irf_var$irf, lower = irf_var$Lower, upper = irf_var$Upper,
+                     lags = lags)
+
+colnames(df_irf) <- c('irf', 'lower', 'upper', 'lags')
+
+df_irf 
+
+```
+
+<br>
+
+```{r econ10_16, warning=FALSE, message=FALSE }
+
+number_ticks <- function(n) {function(limits) pretty(limits, n)}
+
+ggplot(data = df_irf,aes(x=lags,y=irf)) +
+  geom_line(aes(y = upper), colour = 'lightblue2') +
+  geom_line(aes(y = lower), colour = 'lightblue')+
+  geom_line(aes(y = irf), size=.8)+
+  geom_ribbon(aes(x=lags, ymax=upper, 
+                  ymin=lower), 
+              fill="blue", alpha=.1) +
+  xlab("") + ylab("IBOVESPA") + 
+  ggtitle("Resposta ao Impulso na SELIC") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),                    
+        axis.ticks.x=element_blank(),
+        plot.margin = unit(c(2,10,2,10), "mm"))+
+  geom_line(colour = 'black')+
+  scale_x_continuous(breaks=number_ticks(13))+
+  theme_bw()
+
+# interpretação: dado um choque de um desvio padrão na variável SELIC do modelo
+# a variável IBOVESPA do modelo (retornos) diminuirá em cerca de 1,71 no primeiro
+# período, dado que o coeficiente é significativo (intervalos de confiança fora
+# do zero)
+# ou seja, a interpretação é na mesma unidade da variável, como especificada no
+# modelo... se o modelo estivesse especificado em log, a interpretação seria %
+```
+
 <br>
 
