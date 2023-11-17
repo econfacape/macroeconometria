@@ -333,3 +333,268 @@ A saída da função retorna não só os vetores com as relações de longo praz
 Na seção correspondente aos vetores de cointegração (beta), se tem duas colunas, cada uma com um vetor de cointegração. Como estão normalizados, pode-se facilmente encontrar a contrapartida com os coeficientes do processo gerador.
 
 <br>
+
+# Exemplo Análise Macro
+
+``` {r aula12_1a, warning=FALSE, message=FALSE}
+# https://analisemacro.com.br/economia/macroeconometria/cointegracao-e-vetor-de-correcao-de-erros-prevendo-o-desemprego/
+
+# Carrega pacotes
+library(tsDyn)
+library(forecast)
+library(tidyr)
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+library(readr)
+library(urca)
+
+#Taxa de desocupação, na semana de referência, das pessoas de 14 anos ou mais de idade (Sidra/IBGE);
+#Indicador Antecedente de Emprego (IAEmp) com ajuste sazonal (FGV);
+#Indicador de Incerteza da Economia Brasil (IIE-Br) (FGV);
+#Termos de busca: “empregos” e “seguro desemprego” (Google);
+#Índice de Atividade Econômica do Banco Central (IBC-Br) com ajuste sazonal (BCB);
+#Taxa de juros Selic acumulada no mês anualizada base 252 (BCB).
+
+dados <- readr::read_csv("https://aluno.analisemacro.com.br/download/53251/?tmstv=1691078342")
+
+# Dados em formato time series
+dados_ts <- stats::ts(
+  data = dados[-1],
+  start = c(
+    lubridate::year(min(dados$date)),
+    lubridate::month(min(dados$date))
+  ),
+  frequency = 12
+)
+
+```
+
+``` {r aula12_2a, warning=FALSE, message=FALSE}
+# Converter os dados para o formato "long"
+dados_long <-
+  dados |> 
+       tidyr::pivot_longer(!date,
+                           names_to = "variaveis",
+                           values_to = "valores"
+                           )
+
+# Criar o gráfico
+ggplot2::ggplot(dados_long) +
+  ggplot2::geom_line(ggplot2::aes(x = date, y = valores, color = variaveis)) +
+  ggplot2::facet_wrap(~variaveis, scales = "free_y") +
+  ggplot2::scale_x_date(date_labels = "%Y", date_breaks = "4 years") +
+  ggplot2::theme(legend.position = "none")
+```
+
+``` {r aula12_3a, warning=FALSE, message=FALSE}
+# Teste de Cointegração de Johansen (teste automatizado que reporta o posto e lag)
+rank_coint <- tsDyn::rank.select(
+  data    = dados_ts,
+  lag.max = 10,
+  include = "const" # componentes determinísticos do VECM (constante)
+)
+
+rank_coint
+
+# Realiza o Teste usando a função ca.jo
+summary(urca::ca.jo(dados_ts, type = 'eigen', K = 5, ecdet = 'const', 
+              spec = 'transitory'))
+```
+
+``` {r aula12_4, warning=FALSE, message=FALSE}
+# Estimar VECM
+fit_vecm <- tsDyn::VECM(
+  data    = dados_ts,
+  lag     = rank_coint$HQ_min[, "lag"],
+  r       = rank_coint$HQ_min[, "rank"],
+  include = "const",
+  estim   = "ML",
+  exogen = forecast::seasonaldummy(x = dados_ts[, "desocupacao"])
+)
+
+summary(fit_vecm)
+```
+
+``` {r aula12_5, warning=FALSE, message=FALSE}
+fit_tidy <- fit_vecm %>%
+  summary() %>%
+  purrr::pluck("Pvalues") %>%
+  dplyr::as_tibble(rownames = ".response") %>%
+  tidyr::pivot_longer(
+    cols      = -".response",
+    names_to  = "term",
+    values_to = "p.value"
+  ) %>%
+  dplyr::mutate(.model = "vecm")
+
+# Quantos coeficientes foram significativos por modelo?
+fit_tidy %>%
+  dplyr::group_by(.model) %>%
+  dplyr::summarise(
+    n_coeficientes      = dplyr::n(),
+    n_significativos    = sum(p.value < 0.05),
+    perc_significativos = n_significativos / n_coeficientes * 100
+  )
+```
+
+
+``` {r aula12_6, warning=FALSE, message=FALSE}
+resids_vecm <- fit_vecm %>%
+  residuals() %>%
+  dplyr::as_tibble() %>%
+  dplyr::mutate(
+    data = seq.Date(
+      from       = min(dados$date),
+      by         = "month",
+      length.out = nrow(.)
+    ) %>% tsibble::yearmonth()
+  ) %>%
+  tidyr::pivot_longer(
+    cols      = -"data",
+    names_to  = ".response",
+    values_to = ".resid"
+  ) %>%
+  tsibble::as_tsibble(index = "data", key = ".response")
+
+# ACF
+resids_vecm %>%
+  feasts::ACF(.resid) %>%
+  fabletools::autoplot()
+
+# Histograma
+resids_vecm %>%
+  ggplot2::ggplot() +
+  ggplot2::aes(x = .resid) +
+  ggplot2::geom_histogram() +
+  ggplot2::facet_wrap(~ .response, scales = "free")
+```
+
+``` {r aula12_7, warning=FALSE, message=FALSE}
+# Restringir dados (amostra de treino)
+dados_treino <- dados %>%
+  dplyr::slice(1:(dplyr::n() - 12))
+
+dados_treino_mts <- stats::window(
+  x     = dados_ts,
+  start = stats::start(dados_ts),
+  end   = c(
+    lubridate::year(max(dados_treino$date)),
+    lubridate::month(max(dados_treino$date))
+  )
+)
+
+# Dados usados para comparar previsão (amostra de teste)
+dados_teste <- dados %>%
+  dplyr::filter(date > max(dados_treino$date))
+
+dados_teste_mts <- stats::window(
+  x     = dados_ts,
+  start = c(
+    lubridate::year(max(dados_treino$date)),
+    lubridate::month(max(dados_treino$date)) + 1
+  ),
+  end   = stats::end(dados_ts)
+)
+
+```
+
+``` {r aula12_8, warning=FALSE, message=FALSE}
+# Reestimar modelos com restrição de amostra
+rank_coint <- tsDyn::rank.select(
+  data    = dados_treino_mts,
+  lag.max = 5,
+  include = "const"
+)
+
+fit_vecm_train <- tsDyn::VECM( # VECM
+  data    = dados_treino_mts,
+  lag     = rank_coint$HQ_min[, "lag"],
+  r       = rank_coint$HQ_min[, "rank"],
+  include = "const",
+  estim   = "ML",
+  exogen  = forecast::seasonaldummy(x = dados_treino_mts[, "desocupacao"])
+)
+
+# Previsões do VECM
+fc_vecm_teste <- predict(
+  fit_vecm_train,
+  n.ahead = 12,
+  exoPred = forecast::seasonaldummy(x = dados_treino_mts[, "desocupacao"], h = 12)
+)
+
+# Plotando as previsões vs. observado
+fc_tbl_teste <- tibble::tibble(
+  data  = lubridate::as_date(dados_teste$date),
+  Desocupacao = dados_teste$desocupacao,
+  vecm  = fc_vecm_teste[, "desocupacao"]
+)
+
+fc_tbl_teste %>%
+  tidyr::pivot_longer(
+    cols      = -"data",
+    names_to  = "modelo",
+    values_to = "valor"
+  ) %>%
+  ggplot2::ggplot() +
+  ggplot2::aes(x = data, y = valor, color = modelo) +
+  ggplot2::geom_line(size = 1.5) +
+  ggplot2::labs(title = "Desemprego observado vs. previsto")
+```
+
+``` {r aula12_9, warning=FALSE, message=FALSE}
+# Métricas de acurácia
+tsDyn::accuracy_stat(
+  fc_vecm_teste,
+  dados_teste_mts
+)
+
+# Função para calcular U de Theil (versão 2: Theil, 1966)
+u_theil <- function(actual, forecast) {
+  
+  n <- length(actual)
+  test <- 1:n
+  
+  fpe <- (c(forecast[2:n]) / c(actual[1:(n - 1)]) - 1)[test - 1]
+  ape <- (c(actual[2:n]) / c(actual[1:(n - 1)]) - 1)[test - 1]
+  theil <- sqrt(sum((fpe - ape)^2, na.rm = TRUE) / sum(ape^2, na.rm = TRUE))
+  
+  return(theil)
+  
+}
+
+u_theil(actual = fc_tbl_teste$Desocupacao, forecast = fc_tbl_teste$vecm)
+```
+
+``` {r aula12_10, warning=FALSE, message=FALSE}
+# Previsões do VECM
+fc_vecm <- predict(
+  fit_vecm,
+  n.ahead = 12,
+  exoPred = forecast::seasonaldummy(x = dados_treino_mts[, "desocupacao"], h = 12)
+)
+
+fcst <- dados |>
+  dplyr::select(date, desocupacao) |> 
+  dplyr::mutate("id" = "Real") |> 
+  dplyr::bind_rows(
+         fc_vecm[, "desocupacao"] %>%
+         dplyr::as_tibble() %>%
+         dplyr::mutate(
+            "date" = seq.Date(
+              from = dplyr::last(dados$date) %m+% months(1),
+              by = "month",
+              length.out = nrow(.)
+              ),
+            "id" = "Previsão"
+            ) |>
+           dplyr::rename("desocupacao" = value)
+    )
+
+fcst |> 
+  ggplot2::ggplot()+
+  ggplot2::aes(x = date, y = desocupacao, color = id)+
+  ggplot2::geom_line()
+
+```
+<br>
