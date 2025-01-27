@@ -1,0 +1,960 @@
+---
+title: "Aula 2 - Econometria de Séries Temporais"
+author: "João Ricardo F. de Lima"
+date: "today"
+editor: source
+lang: pt
+language: 
+  toc-title-document: '<a href="https://www.facape.br/" target="_blank"><img src="https://github.com/econfacape/macroeconometria/blob/main/logofacape.jpg?raw=true" alt="Logotipo Facape" width="150"></a>'
+format: 
+  html:
+    toc: true
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+    toc-location: left
+    code-fold: false
+    embed-resources: true
+    page-layout: full
+    fig-width: 10
+    fig-height: 8
+    fig-align: center
+    df-print: paged
+    fontsize: 13pt
+theme:
+  light: flatly
+execute:
+  echo: TRUE
+  message: false
+  warning: false
+---
+
+# Análise da Tendência
+
+<br>
+
+Existem dois tipos de tendência: determinística e estocástica; 
+
+<br>
+
+A **tendência determinística** de uma série temporal é representada por mudanças no nível médio da série que ocorrem de forma previsível, em função do tempo.
+
+Supondo que os componentes Ciclo e Sazonalidade não estejam presentes, a série $Y_t$ pode ser representada por
+
+$$
+Y_t=T_t+\epsilon_t
+$$ 
+
+em que $T_t$ é o componente de tendência e $\epsilon_t$ é a volatilidade.
+
+Existem vários métodos para estimar a tendência determinística $T_t$. Os mais utilizados são os métodos de regressão e os de média móvel.
+ 
+No método de regressão, ajusta-se $Y_t$ como uma função do tempo:
+
+$$
+Y_t=f(t)+\epsilon_t
+$$ 
+
+em que f(t) pode assumir a forma de um polinômio de qualquer grau ou exponencial. Tem-se as seguintes possibilidades:
+
+
+a) Tendência Linear: $Y_t=\beta_0+\beta_1t+\epsilon_t$ 
+ 
+b) Tendência Quadrática: $Y_t=\beta_0+\beta_1t+\beta_2t^2+\epsilon_t$ 
+ 
+c) Polinômio de grau k: $Y_t=\beta_0+\beta_1t+\beta_2t^2+\dots+\beta_kt^k+\epsilon_t$ 
+ 
+d) Exponencial: $Y_t=Ae^{\beta t}\epsilon_t$ 
+ 
+a variável explicativa nestes modelos é o tempo (t) que assume os valores t=1,2,3,...T, chamada de variável tendência (trend).
+
+<br>
+
+## Entrando com os dados no R {-}
+
+<br>
+
+``` {r econ1, warning=FALSE, message=FALSE} 
+#Verificando o diretorio que o R esta direcionado
+getwd()
+
+#Direcionado o R para o Diretorio a ser trabalhado
+setwd('/Users/jricardofl/Dropbox/tempecon/dados_manga')
+
+#Limpa o Ambiente Global
+rm(list=ls())
+
+#Pacotes a serem utilizados
+library(tsutils)
+library(forecast)
+library(ggplot2)
+library(mFilter)
+library(greybox)
+library(dplyr)
+library(zoo)
+library(scales)
+library(plotly)
+
+#resultados ficarem com 4 casas decimais
+options(digits=4) 
+
+today <- as.Date("2025-01-24")
+sem_ano <- 4 #ajustar semanalmente
+
+#Inicio do Script
+#Entrando dados no R
+#Entrando dados no R
+dados <- read.csv2('dados_manga_palmer_semana.csv', header=T, sep=";", dec=".")
+#dados <- dados[,-c(9:10)] #retirar as ultimas colunas
+colnames(dados)[1]<-'produto'
+
+#Entrando dados no R - Deflator
+igpdi <- read.csv2('igpdi.csv', 
+                   header=T, sep=";",
+                   dec=".")
+
+dados_comb<-cbind(dados, igpdi)
+
+teste<-dados_comb[,4]-dados_comb[,7]
+
+dadosp<-dados_comb[,-c(1,2,6,7)]
+
+#Deflacionar a serie de manga
+dadosp$preco_def <- dadosp[,3]*(tail(dadosp[,4],1)/dadosp[,4])
+#dadosp<-dadosp[,-2]
+
+#Criando uma variável com as datas semanais
+dadosp$date <- seq(as.Date('2012-01-14'),to=today,by='1 week') 
+dadosp$date[dadosp$date == "2016-01-02"] <- "2015-12-31" #ajustando algumas datas
+dadosp$date[dadosp$date == "2015-01-03"] <- "2014-12-31"
+dadosp$date[dadosp$date == "2014-01-04"] <- "2013-12-31"
+dadosp$date[dadosp$date == "2013-01-05"] <- "2012-12-31"
+dadosp$date[dadosp$date == "2022-01-01"] <- "2022-01-03"
+dadosp$date[dadosp$date == "2022-12-31"] <- "2023-01-01"
+
+#Analise de Serie Temporal
+preco_palmer <- dadosp[,5]
+preco_palmer <- ts(preco_palmer, start=c(2012,1), freq=52)
+
+#Estimação da Tendência
+trend_palmer <- cmav(preco_palmer, outplot=F)
+
+#Gráfico com Ggplot2
+
+g1 <- ggplot(data=dadosp, aes(x=date)) +  #estetica vai valer para todos os geom's
+  geom_line(aes(y=preco_def, colour="PREÇO"), lwd=1)+
+  geom_line(aes(y=trend_palmer, colour="TENDÊNCIA"), lwd=1)+
+  scale_colour_manual("", 
+                      breaks = c("PREÇO", "TENDÊNCIA"),
+                      values = c("blue", "red")) +
+  labs(y= "Preço R$", x= "Semanas de cada Ano", title='',
+       caption = "Fonte: CEPEA reprocessado pelo Observatório de Mercado de Manga da Embrapa") +
+  scale_y_continuous(limits=c(0,8), n.breaks = 9, expand = expansion(add=c(0,0.5)), 
+                     labels=number_format(accuracy = 0.01, decimal.mark = ","))+
+  scale_x_date(date_breaks = "1 year",
+               labels = date_format("%Y"))+
+  theme_classic()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=35, hjust=1, size=10, margin = margin(b=20)),
+        axis.text.y=element_text(hjust=1, size=10, margin = margin(l=20)),
+        axis.title.x = element_text(size=10, face = "bold", margin = margin(b=20)),
+        axis.title.y = element_text(size=10, face = "bold", margin = margin(l=20)),
+        plot.title = element_text(hjust = 0.5, size=16, face="italic"),
+        plot.caption = element_text(hjust = 0, size=12),
+        legend.position = c(1,1),
+        legend.justification = c(1.2, 1.2),
+        legend.text=element_text(size=10)) # Definindo posição da legenda
+
+ggplotly(g1) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.35, 
+                      y=-0.2,
+                      title=''))
+```
+
+<br>
+
+## Decompondo a série {-}
+
+<br>
+
+``` {r econ2, warning=FALSE, message=FALSE} 
+#Decompor a Série
+decompa<-decompose(preco_palmer, type = 'additive')
+plot(decompa$trend)
+```
+
+<br>
+
+## Estimação de Modelos de Tendência {-}
+
+<br>
+
+``` {r econ4, warning=FALSE, message=FALSE} 
+trend <- 1:length(preco_palmer) #geracao da variavel tendencia
+
+regress2 <- lm(preco_palmer ~ trend) #tendencia linear
+summary(regress2)
+
+regress3 <- lm(preco_palmer ~ trend +  I(trend^2)) #tendencia quadratica
+summary(regress3)
+
+regress4 <- lm(preco_palmer ~ trend +  I(trend^2) +  I(trend^3)) #tendencia cubica
+summary(regress4)
+```
+
+Os valores estimados $\hat{Y}_t$ representam a tendência. A série sem tendência determinística é a série de resíduos dada por:
+
+$$
+\hat{\epsilon}_t=Y_t-\hat{Y_t}=Y_t-T_t
+$$
+
+A escolha do modelo que melhor ajusta a série é feita pelo $R^2$ ajustado no caso de terem a mesma variável dependentes e quantidades diferentes de variáveis explicativas ou dos critérios de Akaike (AIC) e Schwarz (SC) quando as variáveis dependentes forem diferentes.
+
+<br>
+
+## Verificação do modelo com melhor ajuste {-}
+
+<br>
+
+``` {r econ5, warning=FALSE, message=FALSE} 
+AIC(regress2, regress3, regress4)
+AICc(regress2)
+AICc(regress3)
+AICc(regress4)
+BIC(regress2, regress3, regress4)
+```
+
+
+Depois do modelo ser escolhido, é possível criar uma nova série, sem a tendência determinística
+
+
+``` {r econ6, warning=FALSE, message=FALSE}  
+#Série sem Tendencia deterministica
+dados.std <- ts(residuals(regress4),
+              start=c(2012,1), freq=12)
+
+dados.std2 <- ts(residuals(regress4) + mean(fitted(regress4)),
+                start=c(2012,1), freq=12)
+
+preco_decompa <- decompa$trend
+dados.std3 <- preco_palmer - preco_decompa
+#Gráfico com Ggplot2
+date <- dadosp$date
+
+g1 <- ggplot() +  #estetica vai valer para todos os geom's
+  geom_line(aes(y=dados.std, x=date, colour="Sem tendência"), lwd=1)+
+  geom_line(aes(y=dados.std2, x=date, colour="Sem Tend + Média"), lwd=1)+
+  geom_line(aes(y=dados.std3, x=date, colour="Sem Tend + Decompa"), lwd=1)+
+  geom_line(aes(y=preco_palmer, x=date, colour="Preço"), lwd=1)+
+  scale_colour_manual("", 
+                      breaks = c("Sem tendência", "Sem Tend + Média", "Sem Tend + Decompa", "Preço"),
+                      values = c("blue", "red", "darkgreen", "black")) +
+  labs(y= "Preço R$", x= "Semanas de cada Ano", title='',
+       caption = "Fonte: CEPEA reprocessado pelo Observatório de Mercado de Manga da Embrapa") +
+  scale_x_date(date_breaks = "1 year",
+               labels = date_format("%Y"))+
+  theme_classic()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=35, hjust=1, size=10, margin = margin(b=20)),
+        axis.text.y=element_text(hjust=1, size=10, margin = margin(l=20)),
+        axis.title.x = element_text(size=10, face = "bold", margin = margin(b=20)),
+        axis.title.y = element_text(size=10, face = "bold", margin = margin(l=20)),
+        plot.title = element_text(hjust = 0.5, size=16, face="italic"),
+        plot.caption = element_text(hjust = 0, size=12),
+        legend.position = c(1,1),
+        legend.justification = c(1.2, 1.2),
+        legend.text=element_text(size=10)) # Definindo posição da legenda
+
+ggplotly(g1) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.10, 
+                      y=-0.2,
+                      title=''))
+```
+
+<br>
+
+# Método das Médias Móveis
+
+<br>
+
+No método das médias móveis estima-se a tendência num instante t por meio da média das observações ao redor de t, obtendo uma série mais suavizada. A representação algébrica depende do número de termos considerados:
+
+(i) Número ímpar de termos:
+$$
+M_t=\frac{1}{k}(Y_{t-\lambda}+Y_{t-\lambda+1}+\dots+Y_t+\dots+Y_{t+\lambda-1}+Y_{t+\lambda})
+$$ 
+em que $k=2\lambda+1$ e $\lambda$ é um número inteiro e positivo.
+
+<div align="center">Tabela 1: Média Móvel de 3 períodos: $\lambda=1$ </div>
+
+<div align="center">
+
+| t | $Y_t$ | $M_t$ Média Móvel|
+|:-:|:-:|:-:|
+|   |   |   |
+| 1 | 5 | - |
+| 2 | 4 | $M_2=\frac{1}{3}(Y_1+Y_2+Y_3)=\frac{1}{3}(5+4+3)=4$  |
+| 3 | 3 | $M_3=\frac{1}{3}(Y_2+Y_3+Y_4)=\frac{1}{3}(4+3+2)=3$  |
+| 4 | 2 | $M_4=\frac{1}{3}(Y_3+Y_4+Y_5)=\frac{1}{3}(3+2+10)=5$ |
+| 5 | 10| $M_5=\frac{1}{3}(Y_4+Y_5+Y_6)=\frac{1}{3}(2+10+6)=6$ |
+| 6 | 6 | $M_6=\frac{1}{3}(Y_5+Y_6+Y_7)=\frac{1}{3}(10+6+8)=8$ |
+| 7 | 8 | $M_7=\frac{1}{3}(Y_6+Y_7+Y_8)=\frac{1}{3}(6+8+7)=7$  |
+| 8 | 7 | - |
+</div>
+
+Define-se a média móvel no período t como $M_t=\frac{1}{2\lambda+1}\sum_{j=-\lambda}^{\lambda}Y_{t+j}$
+
+(ii) A média móvel de k termos em que k é par é dada por: 
+
+$$
+M_t=\frac{1}{k}(Y_{t-\lambda}+Y_{t-\lambda+1}+\dots+Y_t+\dots+Y_{t+\lambda-1}+Y_{t+\lambda})
+$$ 
+
+em que $k=2\lambda$ e $\lambda$ é um número inteiro e positivo. Para $\lambda=1$ a média móvel é de 2 termos, para $\lambda=2$ é de 4 termos e assim, sucessivamente.
+
+<div align="center">Tabela 1: Média Móvel de 4 períodos: $\lambda=2$ </div>
+
+<div align="center">
+ 
+| **\hline    t** | **$Y_t$** | **$M_t$** | **$M_{ct}$** | **Média Móvel**    |
+|:---------------:|:---------:|:---------:|:------------:|:---------------------------------------------:|
+| \hline          |           |           |              |                                               |
+| 1               | 84,6      | -         | -            |                                               |
+| 2               | 89,9      | 87,95     | -            | $M_{2/3}=\frac{1}{4}(Y_1+Y_2+Y_3+Y_4)=87,95$  |
+| 3               | 81,9      | 89,6      | 88,775       | $M_{3/4}=\frac{1}{4}(Y_2+Y_3+Y_4+Y_5)=89,60$  |
+| 4               | 95,4      | 89,575    | 89,5875      | $M_{4/5}=\frac{1}{4}(Y_3+Y_4+Y_5+Y_6)=89,575$ |
+| 5               | 91,2      | 93,575    | 91,575       | $M_{5/6}=\frac{1}{4}(Y_4+Y_5+Y_6+Y_7)=93,5$   |
+| 6               | 89,8      | -         | -            |                                               |
+| 7               | 97,9      | -         | -            |                                               |
+</div>
+
+$M_{ct}$ é denominada de Média Móveis Centralizadas, estimada considerando a média do instante t com a média das médias móveis dos instantes t e t-1. Se $\lambda=6$ temos a média móvel centralizada de 12 períodos.
+
+## Método das Médias Móveis - Aplicação {-}
+
+## Entrando com os dados no R {-}
+
+``` {r econ7, warning=FALSE, message=FALSE}
+#Pacotes a serem utilizados
+library(magrittr)# pipe operations
+library(lubridate)# date operations
+library(ggplot2)  #Para plotar dados
+library(dplyr)    # Para manipulacao de dados
+library(zoo) #Para calcular a média móvel
+library(scales)
+library(DT)
+
+#Direcionado o R para o Diretorio a ser trabalhado
+setwd('/Users/jricardofl/Dropbox/tempecon/dados_corona')
+
+# Entrando com os dados no R e ajustando
+raw.data <-read.csv2('COVID19_20220801VSF.csv', header=T, sep=";")
+colnames(raw.data)[1]<- "date"
+colnames(raw.data)[2]<- "cidades"
+
+#Organizando as datas
+raw.data$dates <- raw.data$date %>% dmy()
+#dates <- raw.data$date %>% dmy()
+#raw.data$date<-dates
+
+#Selecionando apenas Petrolina e acima de 100 casos
+data.pnz <- raw.data %>% filter(cidades=='Petrolina')
+confirmados.pnz <- data.pnz %>% filter(confirmados>=99)
+
+# Gerando a variável novos casos
+day1 <- min(confirmados.pnz$dates)
+confirmados.pnz %<>% mutate(novos.confirmados = confirmados - lag(confirmados, n=1))
+```
+
+
+## Calculando a média móvel no R {-}
+
+``` {r econ8, warning=FALSE, message=FALSE}
+
+#Calculando media movel de 14 dias
+media_movel_pnz <- confirmados.pnz %<>%
+  select(c(dates,novos.confirmados)) %<>%
+  mutate(m.movel.pnz.14=rollmean(novos.confirmados,k=14,fill=NA)) 
+
+
+# Tabela com os valores
+mm_table <- media_movel_pnz[,-1]
+datatable(round(tail(mm_table, 20),1), option = list(
+  autoWidth = TRUE,
+  columnDefs = list(list(className = 'dt-center', targets = "_all"))))
+
+#Gráfico dos novos casos e Média Móvel
+mycolor1 <- "lightblue4"
+mycolor2 <- "red"
+g2 <- ggplot(data=media_movel_pnz) + #estetica vai valer para todos os geom's  
+  geom_col(aes(x=dates, y=novos.confirmados, fill="Casos de Covid-19"), lwd=1)+
+  scale_fill_manual(values=mycolor1)+
+  geom_line(aes(x=dates, y=m.movel.pnz.14, colour="Média Móvel de 14 dias"), size=1)+
+  scale_colour_manual(values=mycolor2)+
+  labs(x=NULL,y='Covid-19 em Petrolina/PE',  #Titulos dos eixos
+       col=NULL)+
+  theme_minimal()+ #Definindo tema
+  theme(legend.position = 'bottom', 
+        legend.title = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) # Definindo posicao da legenda
+
+ggplotly(g2) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.10, 
+                      y=-0.2,
+                      title=''))
+```
+
+
+# Tendência - Filtro Hodrick-Prescott
+
+
+O **filtro Hodrick-Prescott (HP)** é um método de suavização bastante usado entre os macroeconometristas para obter uma estimativa suavizada de um componente de tendência de longo-prazo de uma série temporal.
+
+Considere que se tenha uma série temporal $y_t$ e que se queira decompor a série em partes, uma tendência \{$\mu_t$\}, um componente cíclico \{$c_t$\} e um componente de erro \{$\epsilon_t$\}. 
+
+$$
+min \bigg(\frac{1}{T}\sum_{t=1}^{T}(y_t-\mu_t)^2+\frac{\lambda}{T}\sum_{t=2}^{T-1}[(\mu_{t+1}-\mu_t)-(\mu_t-\mu_{t-1})]^2\bigg)
+$$
+com $\lambda$ sendo uma constante e T o número de observações.
+
+O problema é selecionar \{$\mu_t$\} que minimize a soma de quadrados. Na minimização, $\lambda$ é um parâmetro  que reflete uma penalidade e controla a suavização da variância relativa série. Quanto maior o valor do $\lambda$, maior é a penalidade e mais suave é essa variância. Se $\lambda=\infty$, a série suavizada é uma tendência linear. Se $\lambda=0$, a tendência é a própria série $y_t$;
+Se recomenda os valores de $\lambda$ iguais a 100, 1.600 e 14.400 para dados anuais, trimestrais e mensais, respectivamente.
+
+``` {r econ9, warning=FALSE, message=FALSE}
+
+#Calculo da tendencia pelo Filtro de Hodrick-Prescott
+log_dadosp <- log(preco_palmer)
+dadoshp <- hpfilter(log_dadosp, type='lambda', freq=33177600) #100 em dados anuais
+plot(dadoshp$trend)
+plot(dadoshp$cycle)
+plot(dadoshp)
+
+#Graficos com o PRECO-HP
+
+plot(log_dadosp, main='Preço Mensal de Manga Palmer - Nominal e STD',
+     xlab='(meses)', ylab='Reais (R$)', lwd=3)
+axis(1, at=c(2012:2023))
+lines(dadoshp$trend, col='red', lwd=3)
+legend('topleft', col=c('black','red'), lty=c(1,1), lwd=c(2,2),
+       legend=c('Preço', 'Série Suavizada'))
+```
+
+<br>
+
+# Tendência Estocástica
+
+<br>
+
+A **Tendência Estocástica** de uma série temporal é uma tendência que muda de forma aleatória ao longo do tempo. Enquanto a tendência determinística representa variações percentuais fixas ao longo do tempo, a tendência estocástica implica em uma variação percentual aleatória e imprevisível.
+
+É como se o coeficiente de inclinação da equação de tendência variasse a todo instante t. Para se eliminar a tendência estocástica deve-se diferenciar a série.
+
+<br>
+
+``` {r econ10, warning=FALSE, message=FALSE}
+#Diferenciacao da Serie para retirar tendencia estocástica
+ddados <- diff(preco_palmer)
+
+#Grafico da serie
+plot(ddados, main='Preço Mensal de Manga Palmer - Vale - 1 Diferença',
+     xlab='', ylab='% a.a.', lwd=3)
+
+#2 Diferenciacao da Serie
+dddados <- diff(ddados)
+#dddados <- diff(dados, differences = 2)
+
+#Grafico da serie
+plot(dddados, main='Preço Mensal de Manga Palmer - Vale - 2 Diferença',
+     xlab='', ylab='% a.a.', lwd=3)
+```     
+<br>
+
+# Análise no Python
+
+```{python}
+import pandas as pd
+from pathlib import Path
+import plotnine as p9
+from mizani.formatters import number_format, date_format
+
+# Caminho para os arquivos
+data_dir = Path("/Users/jricardofl/Dropbox/tempecon/dados_manga")
+
+df = (
+    pd.read_csv(data_dir/'dados_manga_palmer_semana.csv', sep=';', decimal='.')
+    .drop(columns=['produto', 'regiao', 'ano', 'semana'])
+)
+
+# Cria o intervalo de dados de 2012-01-07 ate a semana de 2024
+date_range = pd.date_range(start='2012-01-01', end='2025-01-31', freq='W-SAT')
+
+# Remove datas especificas (semana 53)
+dates_to_remove = [pd.Timestamp('2016-12-31'), pd.Timestamp('2022-12-31')]
+date_range = date_range[~date_range.isin(dates_to_remove)]
+
+# Designa a date range como uma nova coluna
+df['date'] = date_range[:len(df)]
+
+df['date2'] = date_range[:len(df)]
+
+# Configura a data como index
+df = df.set_index('date')
+
+# Carrega igpdi dataset
+igpdi = (
+    pd.read_csv(data_dir/'igpdi.csv', sep=';', decimal='.')
+    .assign(date=df.index)
+    .drop(columns=['ano', 'semana'])
+    .set_index('date')
+)
+
+# Junta os DataFrames
+tabela = df.join(igpdi, how='inner')
+
+# Deflaciona a serie de preços de manga
+indice_data_base = tabela.query("date == date.max()").igpdi.values[0]
+tabela = tabela.assign(real=lambda x: (indice_data_base / x.igpdi) * x.preco)
+
+# Criação da variável preco_palmer
+preco_palmer = tabela['real']
+
+# Estima a tendencia por média móvel
+trend_palmer = preco_palmer.rolling(window=52, center=True).mean()
+
+# Gráfico
+
+# Visualização de dados
+
+plot = (
+    p9.ggplot(tabela) +
+    p9.aes(x="date2") + 
+    p9.geom_line(p9.aes(y="real"), color="blue", size=1) +
+    p9.geom_line(p9.aes(y="trend_palmer"), color="red", size=1) + 
+    p9.scale_x_date(
+        date_breaks="2 year", date_labels="%Y"
+    ) +
+    p9.labs(
+        title="Evolução dos Preços de Manga Palmer: 2012 a 2025",
+        subtitle="Ao produtor do Vale do São Francisco",
+        x="Semanas de cada ano",
+        y="Preço R$",
+        caption="Dados: CEPEA reprocessados pelo Observatório de Mercado da Embrapa"
+    ) +
+    p9.theme(
+        figure_size=(12, 6)  # largura, altura
+    )
+)
+
+# Mostra o gráfico
+plot.show()
+```
+
+```{python}
+from statsmodels.tsa.seasonal import STL
+
+# 'preco_palmer' como uma série temporal indexada
+preco_palmer.index = pd.date_range(start="2012-01-01", periods=len(preco_palmer), freq="W")  # Weekly frequency
+
+
+# Aplicar decomposição por STL
+stl = STL(preco_palmer, seasonal=51, robust=True)
+result = stl.fit()
+
+# Extrair o componente de tendencia
+trend_palmer2 = result.trend
+trend_palmer2 = trend_palmer2.reindex(trend_palmer.index, method='nearest')
+
+# Visualização de dados
+
+plot = (
+    p9.ggplot(tabela) +
+    p9.aes(x="date2") +  
+    p9.geom_line(p9.aes(y="real"), color="blue", size=1) +  
+    p9.geom_line(p9.aes(y="trend_palmer2"), color="red", size=1) +  
+    p9.scale_x_date(
+        date_breaks="2 year", date_labels="%Y"
+    ) +
+    p9.labs(
+        title="Evolução dos Preços de Manga Palmer: 2012 a 2025",
+        subtitle="Ao produtor do Vale do São Francisco",
+        x="Semanas de cada ano",
+        y="Preço R$",
+        caption="Dados: CEPEA reprocessados pelo Observatório de Mercado da Embrapa"
+    ) +
+    p9.theme(
+        figure_size=(12, 6)  # largura, altura
+    )
+)
+
+# Mostra o gráfico
+plot.show()
+```
+
+```{python}
+from statsmodels.tsa.seasonal import seasonal_decompose
+
+# Decompor a serie com o modelo aditivo
+decompa = seasonal_decompose(preco_palmer, model='additive', period=52)
+
+# Extrair o componente de tendencia
+trend_palmer3 = decompa.trend
+trend_palmer3 = trend_palmer3.reindex(trend_palmer.index, method='nearest')
+
+# Visualização de dados
+
+plot = (
+    p9.ggplot(tabela) +
+    p9.aes(x="date2") + 
+    p9.geom_line(p9.aes(y="real"), color="blue", size=1) +
+    p9.geom_line(p9.aes(y="trend_palmer3"), color="red", size=1) +
+    p9.scale_x_date(
+        date_breaks="2 year", date_labels="%Y"
+    ) +
+    p9.labs(
+        title="Evolução dos Preços de Manga Palmer: 2012 a 2025",
+        subtitle="Ao produtor do Vale do São Francisco",
+        x="Semanas de cada ano",
+        y="Preço R$",
+        caption="Dados: CEPEA reprocessados pelo Observatório de Mercado da Embrapa"
+    ) +
+    p9.theme(
+        figure_size=(12, 6)  # largura, altura
+    )
+)
+
+# Mostra o gráfico
+plot.show()
+```
+
+```{python}
+# Estimação de modelos de tendência
+
+trend = pd.Series(range(1, len(preco_palmer) + 1), index=preco_palmer.index)
+
+data = pd.DataFrame({
+    'preco_palmer': preco_palmer,
+    'trend': trend
+})
+
+import statsmodels.api as sm
+
+X = sm.add_constant(data['trend'])  #
+y = data['preco_palmer']
+
+model = sm.OLS(y, X).fit()  #
+print(model.summary())
+```
+
+```{python}
+data['trend_squared'] = data['trend'] ** 2
+X = sm.add_constant(data[['trend', 'trend_squared']])
+model_quadratic = sm.OLS(y, X).fit()
+
+print(model_quadratic.summary())
+```
+
+```{python}
+data['trend_cubic'] = data['trend'] ** 3
+X = sm.add_constant(data[['trend', 'trend_squared', 'trend_cubic']])
+model_cubic = sm.OLS(y, X).fit()
+
+print(model_cubic.summary())
+```
+
+
+```{python}
+# AIC e BIC para o modelo linear
+aic_linear = model.aic
+bic_linear = model.bic
+
+# AIC e BIC para o modelo quadratico
+aic_quadratic = model_quadratic.aic
+bic_quadratic = model_quadratic.bic
+
+# AIC e BIC para o modelo cubico
+aic_cubic = model_cubic.aic
+bic_cubic = model_cubic.bic
+
+# Mostra os resultados
+results = pd.DataFrame({
+    'Model': ['Linear', 'Quadratic', 'Cubic'],
+    'AIC': [aic_linear, aic_quadratic, aic_cubic],
+    'BIC': [bic_linear, bic_quadratic, bic_cubic]
+})
+
+print(results)
+
+```
+
+```{python}
+# Residos do modelo cubico
+residuals_cubic = model_cubic.resid
+
+# Residos + media dos valores estimados
+mean_fitted_cubic = model_cubic.fittedvalues.mean()
+residuals_plus_mean = residuals_cubic + mean_fitted_cubic
+
+# Garantindo o mesmo index para todas as series
+residuals_cubic.index = y.index
+residuals_plus_mean.index = y.index
+
+# Adicione a nova série ao DataFrame por conveniência (opcional)
+data['residuals_cubic'] = residuals_cubic
+data['residuals_plus_mean'] = residuals_plus_mean
+
+#Adicionando a retirada da tendência depois do STL
+
+# Alinha os indices das duas series
+trend_palmer2_aligned = trend_palmer2.reindex(preco_palmer.index, method='nearest')
+
+# Calcula os residuos (preco_palmer - trend_palmer2)
+residuals_trend = preco_palmer - trend_palmer2_aligned
+
+data['residuals_trend'] = residuals_trend
+
+# Exibe as primeiras linhas do DataFrame
+#print(dados.head())
+
+# Certifique-se de que 'data' esteja no formato data e hora para plotagem adequada
+data['date'] = pd.to_datetime(data.index)
+
+# Adicione uma coluna 'categoria' para rotular a série
+data_long = pd.melt(
+    data,
+    id_vars=["date"],
+    value_vars=["residuals_cubic", "residuals_plus_mean", "residuals_trend", "preco_palmer"],
+    var_name="Series",
+    value_name="Value"
+)
+
+# Mapeie nomes legíveis para cada série
+series_labels = {
+    "residuals_cubic": "Sem tendência",
+    "residuals_plus_mean": "Sem Tend + Média",
+    "residuals_trend": "Sem Tend + Decompa",
+    "preco_palmer": "Preço"
+}
+data_long["Series"] = data_long["Series"].map(series_labels)
+
+# Gráfico usando plotnine
+g1 = (
+    p9.ggplot(data_long, p9.aes(x="date", y="Value", color="Series")) +
+    p9.geom_line(size=1) +
+    p9.scale_colour_manual(
+        name="",
+        values={
+            "Sem tendência": "blue",
+            "Sem Tend + Média": "red",
+            "Sem Tend + Decompa": "darkgreen",
+            "Preço": "black"
+        }
+    ) +
+    p9.labs(
+        y="Preço R$",
+        x="Semanas de cada Ano",
+        title="",
+        caption="Fonte: CEPEA reprocessado pelo Observatório de Mercado de Manga da Embrapa"
+    ) +
+    p9.scale_x_date(
+        date_breaks="1 year",
+        date_labels="%Y"
+    ) +
+    p9.theme(
+      figure_size=(12, 6),
+      legend_position = "bottom",
+      legend_title=p9.element_blank()
+    )
+)
+
+# Mostra o gráfico
+print(g1)
+
+```
+
+```{python}
+# Método das médias móveis
+
+import pandas as pd
+from pathlib import Path
+import plotnine as p9
+
+# Caminho para os arquivos
+data_dir = Path("/Users/jricardofl/Dropbox/tempecon/dados_corona")
+
+raw_data = (
+    pd.read_csv(data_dir/'COVID19_20220801VSF.csv', sep=';')
+)
+
+# Filtre os dados de Petrolina e confirmados >= 99
+petrolina_filtered = raw_data[
+    (raw_data['cidade'] == 'Petrolina') & (raw_data['confirmados'] >= 99)
+]
+
+# Converte a coluna `data` em data e hora
+petrolina_filtered['data'] = pd.to_datetime(petrolina_filtered['data'], format='%d-%m-%Y')
+
+# Classificar por data
+petrolina_filtered = petrolina_filtered.sort_values(by='data')
+
+# Crie a variável `novos_confirmados` (diferença entre o dia atual e o anterior)
+petrolina_filtered['novos_confirmados'] = petrolina_filtered['confirmados'].diff()
+
+# Preencha os valores faltantes em `novos_confirmados` com 0 (opcional, se necessário)
+petrolina_filtered['novos_confirmados'] = petrolina_filtered['novos_confirmados'].fillna(0).astype(int)
+
+# Calcule a média móvel centralizada de 14 dias
+media_movel_pnz = petrolina_filtered[['data', 'novos_confirmados']].copy()
+media_movel_pnz['m_movel_pnz_14'] = (
+    media_movel_pnz['novos_confirmados']
+    .rolling(window=14, center=True)  # Média móvel centralizada
+    .mean()
+)
+
+# Define as cores
+mycolor1 = "#5A78A0"
+mycolor2 = "red"
+
+# Cria o gráfico
+plot = (
+    p9.ggplot(media_movel_pnz, p9.aes(x="data")) +
+    p9.geom_col(p9.aes(y="novos_confirmados", fill="'Casos de Covid-19'"), size=1) +
+    p9.scale_fill_manual(values=[mycolor1]) +
+    p9.geom_line(p9.aes(y="m_movel_pnz_14", color="'Média Móvel de 14 dias'"), size=1) +
+    p9.scale_color_manual(values=[mycolor2]) +
+    p9.labs(
+        x="Dias da Semana",
+        y="Covid-19 em Petrolina/PE", 
+        fill=None,
+        color=None
+    ) +
+    p9.theme_minimal() +
+    p9.theme(
+        figure_size=(12, 6),
+        legend_position="bottom",
+        legend_title=p9.element_blank()
+    )
+)
+
+# Mostra o Gráfico
+print(plot)
+
+```
+
+```{python}
+#Filtro Hodrick Prescott
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.filters.hp_filter import hpfilter
+
+# Passo1: tomando o log da série
+log_preco_palmer = np.log(preco_palmer)
+
+# Etapa 2: Aplicar o filtro HP
+# Usando um valor lambda para dados de alta frequência, como sua série temporal (semanalmente)
+cycle, trend = hpfilter(log_preco_palmer, lamb=129600)
+
+# Etapa 3: traçar o componente de tendência
+
+plt.figure(figsize=(10, 6))
+plt.plot(preco_palmer.index, trend, label='HP Filter Trend', color='blue')
+plt.title('HP Filter Trend - Preço Palmer')
+plt.xlabel('Time')
+plt.ylabel('Log Price (Trend)')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Etapa 4: Combine a série original e a tendência em um DataFrame
+
+data = pd.DataFrame({
+    'date': preco_palmer.index,
+    'price': log_preco_palmer,
+    'trend': trend
+})
+
+# Etapa 5: Crie o gráfico usando plotnine
+
+plot = (
+    p9.ggplot(data, p9.aes(x='date')) +
+    p9.geom_line(p9.aes(y='price', color="'Preço'"), size=1) +
+    p9.geom_line(p9.aes(y='trend', color="'Série Suavizada'"), size=1) +
+    p9.scale_color_manual(values={'Preço': 'black', 'Série Suavizada': 'red'}) +
+    p9.labs(
+        x='meses',
+        y='Reais (R$) em log',
+        title='Preço Mensal de Manga Palmer - Nominal e STD',
+        color='Legend'
+    ) +
+    p9.scale_x_date(
+        date_breaks="1 year",
+        date_labels="%Y"
+    ) +
+    p9.theme_minimal() +
+    p9.theme(
+        figure_size=(12, 6),
+        legend_position='bottom',
+        legend_title=p9.element_blank()
+    )
+)
+
+# Mostre o gráfico
+print(plot)
+
+```
+
+```{python}
+# Tendência Estacástica
+
+# Variaveis com 1 e duas diferenças
+diff1_palmer = preco_palmer.diff(1)  # 1 diferença
+diff2_palmer = preco_palmer.diff(2)  # 2 diferença
+
+# Combine the Series into a DataFrame
+plot_data = pd.DataFrame({
+    'date2': preco_palmer.index,  # Use the index from preco_palmer
+    'preco_palmer': preco_palmer.values,
+    'diff1_palmer': diff1_palmer.values,
+    'diff2_palmer': diff2_palmer.values
+})
+
+# Plot the first difference
+plot_diff_1 = (
+    p9.ggplot(plot_data) +
+    p9.aes(x='date2', y='diff1_palmer') +
+    p9.geom_line() +
+    p9.scale_x_date(date_breaks = "2 year", date_labels = "%Y") +
+    p9.labs(
+        title="Primeira Diferença dos Preços de Manga Palmer",
+        x="Data",
+        y="Diferença (1ª Ordem)"
+    ) +
+    p9.theme(
+        figure_size=(12, 6)  # Width, Height
+    )
+)
+
+plot_diff_1.show()
+
+# Plot the second difference
+plot_diff_2 = (
+    p9.ggplot(plot_data) +
+    p9.aes(x='date2', y='diff2_palmer') +
+    p9.geom_line() +
+    p9.scale_x_date(date_breaks = "2 year", date_labels = "%Y") +
+    p9.labs(
+        title="Segunda Diferença dos Preços de Manga Palmer",
+        x="Data",
+        y="Diferença (2ª Ordem)"
+    ) +
+    p9.theme(
+        figure_size=(12, 6)  # Width, Height
+    )
+)
+plot_diff_2.show()
+```
+
