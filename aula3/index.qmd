@@ -1,0 +1,923 @@
+---
+title: "Aula 3 - Econometria de Séries Temporais"
+author: "João Ricardo F. de Lima"
+date: "today"
+editor: source
+lang: pt
+language: 
+  toc-title-document: '<a href="https://www.facape.br/" target="_blank"><img src="https://github.com/econfacape/macroeconometria/blob/main/logofacape.jpg?raw=true" alt="Logotipo Facape" width="150"></a>'
+format: 
+  html:
+    toc: true
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+    toc-location: left
+    code-fold: false
+    embed-resources: true
+    page-layout: full
+    fig-width: 10
+    fig-height: 8
+    fig-align: center
+    df-print: paged
+    fontsize: 13pt
+theme:
+  light: flatly
+execute:
+  echo: TRUE
+  message: false
+  warning: false
+---
+
+# Análise da Sazonalidade
+
+<br>
+
+**Variações sazonais** são movimentos cíclicos que se completam no período de um ano e se reproduzem nos outros anos com certa regularidade. Em outras palavras, *sazonalidade* significa dizer que em determinados meses os valores estão sistematicamente acima ou abaixo de um valor médio da série.
+
+Se isola o componente sazonal da série temporal por dois motivos: 
+
+a) remover o componente sazonal para estudar os outros componentes; ou 
+
+b) identificar o componente sazonal que expressam a intensidade da sazonalidade a cada período.
+
+A interdependência temporal na série, então, ocorre de duas maneiras: 
+
+a) correlação entre as observações para meses sucessivos em dado ano, isto é, $Y_t$ relacionado com $Y_{t-1}, Y_{t-2}, Y_{t-3}$, etc; 
+
+b) correlação entre as observações para o mesmo mês em anos sucessivos, ou seja, $Y_t$ relacionado com $Y_{t-s}, Y_{t-2s}, Y_{t-3s}$ em que "s" é o período sazonal considerado.
+
+Considere uma série temporal de volume exportado de mangas. Os volumes de outubro, por exemplo, de todos os anos são correlacionados positivamente; 
+
+Séries sazonais apresentam correlações altas nos *lags sazonais*, que são os lags múltiplos de "s".
+
+<br>
+
+## Gráfico das Exportações de Manga entre 2012 e 2024
+
+<br>
+
+```{r tratamento_base}
+#Direcionado o R para o Diretorio a ser trabalhado
+#setwd('c:/Users/Joao Ricardo Lima/Dropbox/tempecon/dados_manga')
+setwd('/Users/jricardofl/Dropbox/tempecon/dados_manga')
+
+#Inicio do Script
+#Pacotes a serem utilizados 
+library(mFilter)
+library(forecast)
+library(tsutils)
+library(seasonal)
+library(ggplot2)
+library(uroot)
+library(tseries)
+library(ggthemes)
+library(dplyr)
+library(quantmod)
+library(scales)
+library(kableExtra)# complex tables
+library(lmtest)
+library(FinTS)
+library(rbcb)
+library(plotly)
+library(DT)
+library(magrittr)
+library(rmarkdown)
+library(reshape2)
+library(rbcb)
+library(tidyverse)
+library(lubridate)
+library(zoo)
+
+#Entrando dados no R
+dados1 <- read.csv2('exportacoes_2012_2025.csv', header=T, sep=";", dec = ".")
+dados1 <- dados1/1000
+dados1[,1] <- seq(2012, 2025, by = 1)
+colnames(dados1) = c('Ano', 'Valor', 'Toneladas')
+dados1 <- tibble(dados1)
+
+mycolor1 <- "gold"
+mycolor2 <- "red"
+
+g1 <- ggplot(data=dados1) +  #estetica vai valer para todos os geom's
+  geom_col(aes(x=Ano, y=Toneladas, fill="Mil Toneladas"), lwd=1)+
+    scale_fill_manual(values=mycolor1)+
+  geom_line(aes(x=Ano, y=Valor, colour="Milhões de Dólares"), size=2)+
+  scale_colour_manual(values=mycolor2)+
+  labs(y= "US$ Milhões / Mil Ton", x= "Anos", title='',
+       caption = "") +
+  scale_y_continuous(limits=c(0, 360), n.breaks = 10, expand = expansion(add=c(0,0.5)))+
+  scale_x_continuous(breaks = seq(2012, 2025, by = 1))+
+  theme_classic()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=12, margin = margin(b=20)),
+        axis.text.y=element_text(hjust=1, size=12, margin = margin(l=20)),
+        axis.title.x = element_text(size=12, face = "bold", margin = margin(b=20)),
+        axis.title.y = element_text(size=12, face = "bold", margin = margin(l=20)),
+        plot.title = element_text(hjust = 0.5, size=16, face="italic"),
+        plot.caption = element_text(hjust = 0, size=12),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=10)) # Definindo posição da legenda
+
+ggplotly(g1) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.25, 
+                      y=-0.2,
+                      title=''))
+```
+
+<br>
+
+## Volume mensal exportado de Mangas
+
+<br>
+
+``` {r econ1, warning=FALSE, message=FALSE}
+#Direcionando o R para o Diretorio a ser trabalhado
+setwd('/Users/jricardofl/Dropbox/tempecon/dados_manga')
+
+#Limpa o Ambiente Global
+rm(list=ls())
+
+#Inicio do Script
+#Pacotes a serem utilizados 
+library(foreign)
+library(mFilter)
+library(forecast)
+library(dplyr)
+library(tsutils)
+library(ggplot2)
+library(plotly)
+library(reshape2)
+
+atual <-  as.Date("2025-01-01") #ultimo mes disponibilizado
+mes <- 1
+
+#Entrando dados no R
+dados2 <- read.csv2('total_exporta_br.csv', header=T, sep=";", dec = ".")
+#dados <- dados[,-c(9:10)] #retirar as ultimas colunas
+colnames(dados2)[1]<-'ano'
+
+#Ajusta para Volume
+#Analise de Serie Temporal
+exporta_manga_volume <- dados2[,4]
+exporta_manga_volume<-exporta_manga_volume/1000  #passando de quilo para
+
+#Setando como uma série temporal
+exporta_manga_volume <- ts(exporta_manga_volume, start=c(2012,1), freq=12)
+
+#Grafico da evolucao do volume exportado de manga
+plot(exporta_manga_volume, main='Volume mensal exportado de Mangas',
+     xlab='Meses dos anos', ylab='Toneladas', lwd=3)
+```
+
+<br>
+
+## Decomposição da Série Temporal nos componentes
+
+<br>
+
+```{r econ2, warning=FALSE, message=FALSE}
+#Decompor a Serie
+decompa <- decompose(exporta_manga_volume, type = 'multiplicative')
+plot(decompa)
+```
+
+<br>
+
+## Gráfico da Tendência
+
+<br>
+
+```{r econ3, warning=FALSE, message=FALSE}
+trend_volume <- cmav(exporta_manga_volume, outplot=F)
+date <- seq(as.Date('2012-01-01'),to=atual,by='1 month')
+trend_volume <- tibble(date, trend_volume)
+
+g5 <- ggplot(data=trend_volume)+
+  geom_line(aes(x=date, y=trend_volume), color="blue", size=1.5)+
+  scale_y_continuous(limits=c(0,25000), n.breaks = 10, 
+                     expand = expansion(add=c(0,0.5)))+
+  scale_x_date(date_breaks = "1 year",
+               labels = date_format("%Y"))+
+  labs(y= "Tendência", x= "Meses de cada Ano", title='',
+       caption = "")+
+  theme_classic()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=12, margin = margin(b=10)),
+        axis.text.y=element_text(hjust=0.5, size=12, margin = margin(l=10)),
+        axis.title.x = element_text(size=12, face = "bold", margin = margin(b=10)),
+        axis.title.y = element_text(size=12, face = "bold", margin = margin(l=10)),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size=10),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=10)) # Definindo posição da legenda
+
+ggplotly(g5) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.25, 
+                      y=-0.2,
+                      title=''))
+```
+
+<br>
+
+## Gráfico da Sazonalidade
+
+<br>
+
+```{r econ4, warning=FALSE, message=FALSE}
+decompa<-decompose(exporta_manga_volume, type = 'multiplicative')
+sazonal_volume <- decompa$figure
+meses <- seq(as.Date("2021/1/1"), by = "month", length.out = 12) 
+sazonal_graph_volume <- tibble(meses, sazonal_volume)
+
+g6 <- ggplot(data=sazonal_graph_volume)+
+  geom_line(aes(x=meses, y=sazonal_volume), color="blue", size=1.5)+
+  scale_y_continuous(limits=c(-1,3), n.breaks = 5, expand = expansion(add=c(0,0.5)), 
+                     labels=number_format(accuracy = 0.1)) +
+    scale_x_date(date_breaks = "1 month",
+               labels = date_format("%B"))+
+  labs(y= "", x= "Meses de cada Ano", title='',
+       caption = "")+
+  theme_minimal()+
+  theme(axis.text.x=element_text(angle=45, hjust=0.5, size=12, margin = margin(b=10)),
+        axis.text.y=element_text(hjust=0.5, size=12, margin = margin(l=10)),
+        axis.title.y = element_text(size=12, face = "bold"),
+        axis.title.x = element_text(size=12, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size=12),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=10)) # Definindo posição da legenda
+
+ggplotly(g6) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.25, 
+                      y=-0.2,
+                      title=''))
+```
+
+<br>
+
+## Analise da Sazonalidade com o seasplot
+
+<br>
+
+``` {r econ5, warning=FALSE, message=FALSE}
+seasplot(exporta_manga_volume, outplot = 5)
+```
+
+<br>
+
+## Comparação da média histórica com 3 últimos anos
+
+``` {r econ6, warning=FALSE, message=FALSE}
+#Comparações com os anos e entre as médias/max/min
+
+exporta_manga_volume_2024 <- window(exporta_manga_volume, end=c(2024,12))
+seas24_vol<-seasplot(exporta_manga_volume_2024, trend=F, outplot = F)
+medias24_vol <- colMeans(seas24_vol$season)
+
+exporta_manga_volume_2023 <- window(exporta_manga_volume, end=c(2023,12))
+
+exporta_manga_volume_2024 <- window(exporta_manga_volume, end=c(2024,12))
+
+exporta_manga_volume_25 <- as.matrix(tail(exporta_manga_volume,mes)) #ajustar mensalmente
+exporta_manga_volume_2025 <- matrix(NA, nrow=12, ncol=1)
+
+for(i in 1:mes){
+  exporta_manga_volume_2025[i,1] = exporta_manga_volume_25[i,1]
+}
+  
+#Como só se tem até a semana 12
+medias24_vol <- medias24_vol[1:12]
+
+matrix_vol = matrix(NA, nrow=12, ncol=2)
+
+for(i in 1:12){
+  matrix_vol[i,1] = min(seas24_vol$season[,i])
+  matrix_vol[i,2] = max(seas24_vol$season[,i])
+}
+
+#time <- c("Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", #"Dezembro")
+#time <-seq(1:12)
+table_volume <- data.frame(meses, round(matrix_vol[,1],0), round(medias24_vol,0), round(matrix_vol[,2],0), round(tail(exporta_manga_volume_2023,12),0),
+round(tail(exporta_manga_volume_2024,12),0), round(exporta_manga_volume_2025[,1],0))
+colnames(table_volume) = c('Meses', 'Mínimo', 'Média', 'Máximo', '2023', '2024', '2025')
+
+tablea_vol <- table_volume[,-c(2,4:7)]
+tableb_vol <- table_volume[,-c(2,3,4)]
+
+tablea2_vol <- melt(tablea_vol, id.var='Meses')
+tableb2_vol <- melt(tableb_vol, id.var='Meses')
+
+mycolors <- c("lightblue3", "gray44", "gold")
+
+g7 <- ggplot()+
+  geom_col(data=tableb2_vol, aes(x=Meses, y=value, fill=variable), lwd=1,
+           position = "dodge")+
+  scale_fill_manual(values=mycolors)+
+  geom_line(data=tablea2_vol, aes(x=Meses, y=value, colour=variable), linetype = "solid",
+            size = 1)+
+  scale_colour_manual(values = c("chocolate")) +
+  scale_y_continuous(limits = c(0, 60000), n.breaks = 10)+
+  scale_x_date(date_breaks = "1 month",
+               labels = date_format("%B"))+
+  labs(y= "Toneladas", x= "Meses do Ano", title='Exportações de Manga do Vale do S. Francisco: valores e estatísticas mensais.',
+       caption = "")+
+  theme_minimal()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=35, hjust=0.5, size=8, margin = margin(b=20)),
+        axis.text.y=element_text(hjust=1, size=8, margin = margin(l=20)),
+        axis.title.x = element_text(size=8, face = "bold", margin = margin(b=20)),
+        axis.title.y = element_text(size=8, face = "bold", margin = margin(l=20)),
+        plot.title = element_text(hjust = 0.5, size=12),
+        plot.caption = element_text(hjust = 0, size=12),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=9)) # Definindo posição da legenda
+
+ggplotly(g7) %>%
+  layout(legend = list(
+    orientation = "h", 
+    x=0.25, 
+    y=-0.2,
+    title=''))
+```
+
+<br>
+
+# Sazonalidade Determinística
+
+<br>
+
+A *sazonalidade* pode ser de natureza **determinística** ou **estocástica**. A sazonalidade determinística é aquela que tem um padrão previsível a partir de meses anteriores e normalmente está relacionada com a influência de fenomenos climáticos ou datas específicas que se repetem ano a ano.
+
+<br>
+
+## Sazonalidade - Regressão
+
+<br>
+
+A sazonalidade determinística pode ser analisada pelo **método de regressão** com o uso de *dummies*. Considere: 
+
+<br>
+
+$$
+Y_t=T_t+S_t+\epsilon_t
+$$
+<br>
+
+em que a tendência é dada por por $T_t=\sum_{j=0}^{k}\beta_jt^j$;
+
+Se a sazonalidade é determinística, o padrão sazonal não varia a cada ano e pode ser representado por 12 dummies sazonais $S_t=\sum_{j=1}^{12}\alpha_jd_{jt}$
+
+Cada série de dummy sazonal da variável "y" pode ser facilmente gerada no R pelo comando ``dseas1 <- seasonaldummy(y) ``. Se a restrição $\sum_{j=i}^{12}d_j=0$ for usada, $\alpha_j$ representa o efeito sazonal do período "s" comparado com uma linha de tendencia média.
+	
+Estima-se o seguinte modelo:
+
+<br>
+
+$$
+Y_t=\sum_{j=0}^{k}\beta_jt^j+\sum_{j=1}^{11}\alpha_jD_{jt}+\epsilon_t
+$$
+<br>
+
+os coeficientes $\alpha_1, \alpha_2, \dots, \alpha_12$ são as constantes sazonais. 
+
+Dado que $\sum_{j=i}^{12}d_j=0$, $\alpha_{12}=-(\alpha_1+\alpha_2+ \dots+ \alpha_{11})$
+
+<br>
+
+## Exemplo Sazonalidade Determinística por regressão no R
+
+<br>
+
+``` {r econ7, warning=FALSE, message=FALSE}
+#Geracao das variaveis Dummy Sazonais
+exporta_manga_volume1 <- window(exporta_manga_volume, end=c(2024,12))
+trend_volume <- ts(trend_volume, start=c(2012,1), freq=12)
+trend_volume1 <- window(trend_volume, end=c(2024,12))
+trend_volume1 <- trend_volume1[,2] 
+
+dseas1 <- seasonaldummy(exporta_manga_volume1)
+for(i in c(12, 24, 36, 48, 60, 72, 84, 96, 108, 120, 132,
+           144, 156)) {
+  dseas1[i,] <- -1
+}
+
+#resultados ficarem com 4 casas decimais
+#options(digits=4) 
+
+regressao1 <- lm(exporta_manga_volume1 ~ trend_volume1 + dseas1)
+summary(regressao1)
+
+# Organização dos Coeficientes da Regressão 
+
+coeffs <- coefficients(regressao1) #salva os coeficientes do modelo
+
+#Calculo do efeito sazonal para dezembro como sendo o 
+#negativo do somatorio dos outros meses
+
+dezembro <- as.data.frame(-(coeffs[3]+coeffs[4]+coeffs[5]+coeffs[6]+coeffs[7]+
+                              coeffs[8]+coeffs[9]+coeffs[10]+coeffs[11]
+                            +coeffs[12]+coeffs[13]))
+
+colnames(dezembro)[1] <- "coeffs"
+rownames(dezembro)[1] <- "Dezembro"
+
+#salva os coeficientes estimados em um data frame
+coeffs <- as.data.frame(coeffs) 
+rownames(coeffs) <- c("intercepto", "tendencia", "Janeiro", "Fevereiro", "Março",
+                      "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", 
+                      "Outubro", "Novembro")
+
+# adiciona uma linha no primeiro data frame, juntando dezembro
+# com os demais meses
+indices_sazonais <- bind_rows(coeffs, dezembro) 
+
+#retira as duas primeiras linhas
+indices_sazonais <- indices_sazonais %>% slice(-(1:2)) 
+
+#cria uma variável "meses"
+indices_sazonais$meses <- c("Janeiro", "Fevereiro", "Março",
+                      "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", 
+                      "Outubro", "Novembro", "Dezembro")
+
+#Transforma a variável em um factor para fazer o gráfico sem mudar
+#a ordem do eixo do x
+indices_sazonais$meses <- factor(indices_sazonais$meses, levels = indices_sazonais$meses)
+
+#Gráfico
+
+mycolor1 <- "blue" #escolhe a cor do gráfico
+
+ggplot(data=indices_sazonais, aes(x=meses, y=coeffs, fill="Indices Sazonais"))+
+  geom_col()+
+    scale_fill_manual(values=mycolor1)+
+    labs(y= "Índices Sazonais", x= "Meses", title='Analise de Sazonalidade Exportações de Manga por Regressão',
+       caption = "")+
+    theme_minimal()+ #Definindo tema
+    theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=20)),
+        axis.text.y=element_text(hjust=1, size=14, margin = margin(l=20)),
+        axis.title.x = element_text(size=14, face = "bold", margin = margin(b=20)),
+        axis.title.y = element_text(size=14, face = "bold", margin = margin(l=40)),
+        plot.title = element_text(hjust = 0.5, size=16, face="italic"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size=12),
+        legend.position = 'bottom',
+        legend.title = element_blank()) # Definindo posição da legenda
+```
+
+<br>
+
+# Análise no Python
+
+```{python}
+import pandas as pd
+import plotnine as p9
+from pathlib import Path
+
+# Caminho para os arquivos
+data_dir = Path("/Users/jricardofl/Dropbox/tempecon/dados_manga")
+
+#Carregar dados
+dados1 = pd.read_csv(data_dir/'exportacoes_2012_2025.csv', sep=";", decimal=",")
+
+# Renomear colunas
+dados1.columns = ["Ano", "Valor", "Toneladas"]
+
+# Converte colunas numéricas em tipos adequados
+dados1["Ano"] = dados1["Ano"].astype(int)
+dados1[["Valor", "Toneladas"]] = dados1[["Valor", "Toneladas"]].replace(",", ".", regex=True).astype(float)
+
+# Converta valores para milhares
+dados1[["Valor", "Toneladas"]] = dados1[["Valor", "Toneladas"]] / 1000
+
+# Define cores
+mycolor1 = "gold"
+mycolor2 = "red"
+
+# Cria o gráfico
+plot = (
+    p9.ggplot(dados1)
+    + p9.geom_col(p9.aes(x="Ano", y="Toneladas", fill='"Mil Toneladas"'), size=1)
+    + p9.scale_fill_manual(values=[mycolor1])
+    + p9.geom_line(p9.aes(x="Ano", y="Valor", color='"Milhões de Dólares"'), size=2)
+    + p9.scale_color_manual(values=[mycolor2])
+    + p9.labs(
+        y="US$ Milhões / Mil Ton",
+        x="Anos",
+        title="",
+        caption=""
+    )
+    + p9.scale_y_continuous(limits=(0, 360), breaks=range(0, 361, 40))
+    + p9.scale_x_continuous(breaks=range(2012, 2026, 1))
+    + p9.theme_minimal()
+    + p9.theme(
+        figure_size=(12, 6),  # largura, altura
+        legend_position = "bottom",
+        legend_title=p9.element_blank()
+    )
+)
+
+# Mostra o Gráfico
+plot.show()
+
+```
+
+```{python}
+# Caminho para os arquivos
+#data_dir = Path("/Users/jricardofl/Dropbox/tempecon/dados_manga")
+
+# Carrega os Dados
+dados2 = pd.read_csv(data_dir/'total_exporta_br.csv', sep=";", decimal=",")
+
+# Ajusta para Volume (convertendo quilos para mil toneladas)
+dados2["exporta_manga_volume"] = dados2.iloc[:, 3] / 1000
+
+# Criar coluna de período no formato datetime
+dados2["data"] = pd.to_datetime(dados2["ano"].astype(str) + "-" + dados2["mes"].astype(str) + "-01")
+
+# Criar o gráfico
+g2 = (
+    p9.ggplot(dados2, p9.aes(x="data", y="exporta_manga_volume"))
+    + p9.geom_line(color="blue", size=1.5)
+    + p9.labs(
+        title="Volume Mensal Exportado de Mangas",
+        x="Meses dos Anos",
+        y="Mil Toneladas"
+    )
+    + p9.scale_x_datetime(date_breaks="2 years", date_labels="%Y")
+    + p9.theme_minimal()
+    + p9.theme(
+        figure_size=(12, 6),
+        axis_text_x=p9.element_text(angle=45, hjust=1, size=12),
+        axis_text_y=p9.element_text(size=12),
+        axis_title_x=p9.element_text(size=14, face="bold"),
+        axis_title_y=p9.element_text(size=14, face="bold"),
+        plot_title=p9.element_text(size=16, face="bold"),
+    )
+)
+
+# Mostrar o gráfico
+g2.show()
+```
+
+```{python}
+from statsmodels.tsa.seasonal import seasonal_decompose
+import matplotlib.pyplot as plt
+
+# Define o índice para a coluna de tempo
+dados2["data"] = pd.to_datetime(dados2["ano"].astype(str) + "-" + dados2["mes"].astype(str) + "-01")
+dados2.set_index("data", inplace=True)
+
+# Decompor a série (modelo aditivo)
+decompa = seasonal_decompose(dados2["exporta_manga_volume"], model='additive', period=12)  
+
+# Gráfico da Decomposição
+fig, axes = plt.subplots(4, 1, figsize=(12, 8), sharex=True)
+
+# Original serie
+axes[0].plot(dados2.index, dados2["exporta_manga_volume"], label="Série Original", color="black")
+axes[0].set_title("Série Original", fontsize=14)
+axes[0].legend()
+
+# Trend/tendencia
+axes[1].plot(dados2.index, decompa.trend, label="Tendência", color="blue")
+axes[1].set_title("Tendência", fontsize=14)
+axes[1].legend()
+
+# Seasonality/Sazonalidade
+axes[2].plot(dados2.index, decompa.seasonal, label="Sazonalidade", color="green")
+axes[2].set_title("Sazonalidade", fontsize=14)
+axes[2].legend()
+
+# Residuos
+axes[3].plot(dados2.index, decompa.resid, label="Resíduos", color="red")
+axes[3].set_title("Resíduos", fontsize=14)
+axes[3].legend()
+
+plt.suptitle("Decomposição Aditiva da Série Temporal - Volume Exportado de Manga", fontsize=16)
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+from statsmodels.tsa.seasonal import STL
+
+# Certifique-se de que 'dados' estejam no formato data e hora e definidos como índice
+dados2["data"] = pd.to_datetime(dados2["ano"].astype(str) + "-" + dados2["mes"].astype(str) + "-01")
+dados2.set_index("data", inplace=True)
+
+# Aplicar a decomposição STL
+stl = STL(dados2["exporta_manga_volume"], seasonal=11)
+res = stl.fit()
+
+# Extrair a tendência
+trend_volume1 = res.trend.dropna()
+
+# Criar o DataFrame da tendência
+trend_df = trend_volume1.reset_index()
+trend_df.columns = ["Data", "Tendência"]
+
+# Plotar a tendência com plotnine
+import plotnine as p9
+
+g_trend = (
+    p9.ggplot(trend_df, p9.aes(x="Data", y="Tendência"))
+    + p9.geom_line(color="darkred", size=2)
+    + p9.labs(
+        title="Tendência da Exportação de Manga",
+        x="Ano",
+        y="Volume Exportado (Tendência)"
+    )
+    + p9.theme_minimal()
+    + p9.theme(
+        figure_size=(12, 6),
+        axis_text_x=p9.element_text(size=12),
+        axis_text_y=p9.element_text(size=12),
+        axis_title_x=p9.element_text(size=14, face="bold"),
+        axis_title_y=p9.element_text(size=14, face="bold"),
+        plot_title=p9.element_text(size=16, face="bold")
+    )
+)
+
+# Exibir o gráfico da tendência
+g_trend.show()
+```
+
+```{python}
+# Extrae a sazonalidade
+dados2["Sazonalidade"] = decompa.seasonal
+
+# Calcula o padrão médio de sazonalidade por mês
+dados2["Mes"] = dados2.index.month
+seasonality_pattern = dados2.groupby("Mes")["Sazonalidade"].mean().reset_index()
+
+# Definir rótulos de mês
+month_labels = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+seasonality_pattern["Mes"] = seasonality_pattern["Mes"].astype(int)
+
+# Gráfico com o plotnine
+g3 = (
+    p9.ggplot(seasonality_pattern, p9.aes(x="Mes", y="Sazonalidade"))
+    + p9.geom_line(color="blue", size=2)
+    + p9.geom_point(color="black", size=3)
+    + p9.scale_x_continuous(breaks=range(1, 13), labels=month_labels)
+    + p9.labs(
+        title="Padrão Sazonal Médio - Exportação de Manga",
+        x="Mês",
+        y="Variação Sazonal Média"
+    )
+    + p9.theme_minimal()
+    + p9.theme(
+        figure_size=(12, 6),
+        axis_text_x=p9.element_text(size=12),
+        axis_text_y=p9.element_text(size=12),
+        axis_title_x=p9.element_text(size=14, face="bold"),
+        axis_title_y=p9.element_text(size=14, face="bold"),
+        plot_title=p9.element_text(size=16, face="bold")
+    )
+)
+
+# Mostrar o gráfico
+g3.show()
+
+```
+
+```{python}
+# Certifique-se de que 'dados' estejam no formato data e hora e definidos como índice
+dados2["data"] = pd.to_datetime(dados2["ano"].astype(str) + "-" + dados2["mes"].astype(str) + "-01")
+dados2.set_index("data", inplace=True)
+
+# Decompor a série (Multiplicativo)
+decompa = seasonal_decompose(dados2["exporta_manga_volume"], model='multiplicative', period=12)
+
+# Extrae a sazonalidade
+sazonal_volume = decompa.seasonal.groupby(dados2.index.month).mean().reset_index()
+sazonal_volume.columns = ["Mes", "Sazonalidade"]
+
+# Cria um cronograma genérico para visualização (2021 como ano de referência)
+sazonal_volume["meses"] = pd.date_range(start="2021-01-01", periods=12, freq="MS")
+
+# Gráfico do padrão de sazonalidade
+g6 = (
+    p9.ggplot(sazonal_volume, p9.aes(x="meses", y="Sazonalidade"))
+    + p9.geom_line(color="blue", size=1.5)
+    + p9.scale_x_datetime(date_breaks="1 month", date_labels="%B")
+    + p9.scale_y_continuous(limits=(-1, 3), breaks=[-1, 0, 1, 2, 3])
+    + p9.labs(
+        y="",
+        x="Meses de cada Ano",
+        title="Padrão Sazonal Multiplicativo - Exportação de Manga",
+        caption=""
+    )
+    + p9.theme_minimal()
+    + p9.theme(
+        figure_size=(12, 6),
+        axis_text_x=p9.element_text(angle=45, hjust=0.5, size=12, margin={"b": 10}),
+        axis_text_y=p9.element_text(hjust=0.5, size=12, margin={"l": 10}),
+        axis_title_x=p9.element_text(size=12, face="bold"),
+        axis_title_y=p9.element_text(size=12, face="bold"),
+        panel_grid_major=p9.element_blank(),
+        panel_grid_minor=p9.element_blank(),
+        plot_caption=p9.element_text(size=12),
+        legend_position="bottom",
+        legend_title=p9.element_blank(),
+        legend_text=p9.element_text(size=10),
+    )
+)
+
+# Mostrar o gráfico
+g6.show()
+
+```
+
+```{python}
+import pandas as pd
+import plotnine as p9
+
+# Extrai anos para comparação
+dados_2023 = dados2[dados2["ano"] == 2023].copy()
+dados_2024 = dados2[dados2["ano"] == 2024].copy()
+dados_2025 = dados2[dados2["ano"] == 2025].copy()
+
+# Calcula a sazonalidade histórica (média, mínimo, máximo)
+seasonal_stats = dados2[dados2["ano"] <= 2024].groupby("Mes")["exporta_manga_volume"].agg(["min", 
+"max", "mean"]).reset_index()
+seasonal_stats.columns = ["Mes", "Minimo", "Maximo", "Media"]
+
+# Mesclar com dados de 2022, 2023, 2024
+export_data = (
+    seasonal_stats
+    .merge(dados_2023[["Mes", "exporta_manga_volume"]].rename(columns={"exporta_manga_volume": "2023"}), 
+    on="Mes", how="left")
+    .merge(dados_2024[["Mes", "exporta_manga_volume"]].rename(columns={"exporta_manga_volume": "2024"}), 
+    on="Mes", how="left")
+    .merge(dados_2025[["Mes", "exporta_manga_volume"]].rename(columns={"exporta_manga_volume": "2025"}), 
+    on="Mes", how="left")
+)
+
+# Converte dados em formato longo para plotagem
+export_long = export_data.melt(id_vars=["Mes", "Minimo", "Maximo", "Media"], 
+var_name="ano", value_name="Toneladas")
+
+# Definir rótulos de mês
+month_labels = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+
+# Define cores em formato hexadecimal
+mycolors = ["#4682B4", "#707070", "#FFD700"]  # Barras: Light Blue, Dark Gray, Gold
+line_color = "#D2691E"  #Cor de chocolate para a linha média
+
+# Cria o Gráfico
+g7 = (
+    p9.ggplot()
+    + p9.geom_col(data=export_long[export_long["ano"].isin(["2023", "2024", "2025"])],
+                  mapping=p9.aes(x="Mes", y="Toneladas", fill="ano"),
+                  position="dodge")
+    + p9.scale_fill_manual(values=mycolors, name="Legenda")  # adiciona legenda
+    + p9.geom_line(data=export_data,
+                   mapping=p9.aes(x="Mes", y="Media", color='"Média Histórica"'),
+                   size=1.5, show_legend=True)  # adiciona linha com o rotulo
+    + p9.scale_color_manual(values=[line_color], name="Legenda")  # adiciona legenda
+    + p9.scale_x_continuous(breaks=range(1, 13), labels=month_labels)
+    + p9.labs(
+        y="Toneladas",
+        x="Meses do Ano",
+        title="Exportações de Manga do Vale do São Francisco: valores e estatísticas mensais."
+    )
+    + p9.theme_minimal()
+    + p9.theme(
+        figure_size=(12, 6),
+        axis_text_x=p9.element_text(angle=35, hjust=0.5, size=8),
+        axis_text_y=p9.element_text(size=8),
+        axis_title_x=p9.element_text(size=8, face="bold"),
+        axis_title_y=p9.element_text(size=8, face="bold"),
+        plot_title=p9.element_text(size=12),
+        panel_grid_major=p9.element_blank(),
+        panel_grid_minor=p9.element_blank(),
+        legend_position="bottom",
+        legend_title=p9.element_blank(),
+        legend_text=p9.element_text(size=9)
+    )
+)
+
+# Mostra o grafico
+g7.show()
+
+```
+
+```{python}
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+from statsmodels.regression.linear_model import OLS
+
+# Garantir que os dados sejam uma série temporal adequada
+dados2 = dados2.iloc[:-1].copy()  # Evitar modificações indesejadas
+dados2["data"] = pd.to_datetime(dados2["ano"].astype(str) + "-" + dados2["mes"].astype(str) + "-01")
+dados2.set_index("data", inplace=True)
+
+# Extrair o volume exportado e a tendência
+exporta_manga_volume1 = dados2["exporta_manga_volume"]
+
+# Remover a última observação da tendência para corresponder ao conjunto de dados
+trend_volume1 = trend_volume1.iloc[:-1]
+
+# Gerar todas as 12 variáveis dummies mensais
+dseas1 = pd.get_dummies(dados2.index.month, prefix="Month")
+
+# Definir a mesma base de referência usada no R (exemplo: dezembro)
+baseline_month = "Month_12"  # Altere para corresponder à base de referência usada no R
+if baseline_month in dseas1.columns:
+    dseas1 = dseas1.drop(columns=[baseline_month])
+
+# Converter valores booleanos (True/False) para float (1.0/0.0)
+dseas1 = dseas1.astype(float)
+
+# Ajustar índices específicos para -1, garantindo que existam
+indices_to_adjust = [11, 23, 35, 47, 59, 71, 83, 95, 107, 119, 131, 143, 155]
+valid_indices = [idx for idx in indices_to_adjust if idx in dseas1.index]
+dseas1.loc[valid_indices] = -1
+
+# Redefinir o índice de trend_volume1 para corresponder a dseas1
+trend_reset = trend_volume1.reset_index(drop=True)
+
+# Garantir que os comprimentos coincidam antes da concatenação
+assert len(trend_reset) == len(dseas1), "Incompatibilidade entre tendência e dummies sazonais!"
+
+# Construir o conjunto de dados para a regressão
+X = pd.concat([pd.Series(trend_reset, name="Trend"), dseas1], axis=1)
+X = sm.add_constant(X)  # Adicionar intercepto
+X = X.apply(pd.to_numeric)  # Garantir que os valores sejam numéricos
+
+# Redefinir o índice para alinhar com trend_reset
+y = exporta_manga_volume1.reset_index(drop=True).loc[trend_reset.index]
+
+# Garantir que X e y estejam alinhados
+X, y = X.align(y, join='inner', axis=0)
+
+# Executar a regressão
+model = OLS(y, X).fit()
+
+# Exibir os resultados
+print(model.summary())
+
+
+```
+
+```{python}
+# Obter os coeficientes da regressão
+coeffs = model.params.copy()  # Extrair coeficientes do modelo OLS
+
+# Calcular o efeito sazonal para dezembro como o negativo da soma dos outros meses
+dezembro = -coeffs[2:].sum()  # Somar todas as dummies dos meses e inverter o sinal
+
+# Converter coeficientes para um DataFrame
+indices_sazonais = pd.DataFrame(coeffs[2:], columns=["coeffs"])  # Excluir intercepto e tendência
+indices_sazonais.loc["Month_12"] = dezembro  # Adicionar o valor de dezembro
+
+# Mapear os nomes dos meses para melhor visualização
+month_names = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+]
+indices_sazonais["meses"] = month_names  # Atribuir nomes dos meses
+
+# Converter 'meses' para um tipo categórico para manter a ordem
+indices_sazonais["meses"] = pd.Categorical(indices_sazonais["meses"], categories=month_names, ordered=True)
+
+# Criar o gráfico de barras
+g = (
+    p9.ggplot(indices_sazonais, p9.aes(x="meses", y="coeffs", fill='"Índices Sazonais"')) +
+    p9.geom_col() +
+    p9.scale_fill_manual(values=["blue"]) +  # Definir cor das barras
+    p9.labs(
+        y="Índices Sazonais",
+        x="Meses",
+        title="Análise de Sazonalidade das Exportações de Manga por Regressão"
+    ) +
+    p9.theme_minimal() +  # Aplicar um tema limpo
+    p9.theme(
+        figure_size=(12, 6),  # largura, altura
+        axis_text_x=p9.element_text(angle=0, hjust=0.5, size=8),
+        axis_text_y=p9.element_text(hjust=1, size=14),
+        axis_title_x=p9.element_text(size=14, face="bold"),
+        axis_title_y=p9.element_text(size=14, face="bold"),
+        panel_grid_major=p9.element_blank(),
+        panel_grid_minor=p9.element_blank(),
+        plot_title=p9.element_text(hjust=0.5, size=16, face="italic"),
+        legend_position="bottom",
+        legend_title=p9.element_blank()
+    )
+)
+
+# Exibir o gráfico
+print(g)
+```
+
