@@ -1,0 +1,674 @@
+---
+title: "Aula 5 - Econometria de Séries Temporais"
+author: "João Ricardo F. de Lima"
+date: "today"
+editor: source
+lang: pt
+language: 
+  toc-title-document: '<a href="https://www.facape.br/" target="_blank"><img src="https://github.com/econfacape/macroeconometria/blob/main/logofacape.jpg?raw=true" alt="Logotipo Facape" width="150"></a>'
+format: 
+  html:
+    toc: true
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+    toc-location: left
+    code-fold: false
+    embed-resources: true
+    page-layout: full
+    fig-width: 10
+    fig-height: 8
+    fig-align: center
+    df-print: paged
+    fontsize: 13pt
+theme:
+  light: flatly
+execute:
+  echo: TRUE
+  message: false
+  warning: false
+---
+
+<br>
+
+# Raiz Unitária
+
+<br>
+
+Considere um processo AR(1)
+
+$$
+Y_t=\phi_1Y_{t-1}+\epsilon_t
+\tag{1}
+$$
+
+se $\phi_1=1$, tem-se que 
+$$
+Y_t=Y_{t-1}+\epsilon_t
+\tag{2}
+$$
+
+ou seja, $Y_t$  é um passeio aleatório, não estacionário, possui uma raiz unitária. Contudo, a existência da raiz unitária não é devido o fato de $\phi_1=1$ no modelo (1) acima. Está relacionado com as raízes de um polinômio;
+
+Usando o operador de defasagem na equação (1), tem-se
+
+$$
+Y_t=\phi_1LY_t+\epsilon_t
+\tag{3}
+$$
+
+rearranjando os termos
+
+$$
+Y_t-\phi_1LY_t=\epsilon_t
+\tag{4}
+$$
+
+$$
+(1-\phi_1L)Y_t=\epsilon_t
+\tag{5}
+$$
+
+em que $1-\phi_1L=0$ é denominada de equação característica/polinômio 1 grau.
+
+Resolvendo para L,
+$$
+\phi_1L=1
+\tag{6}
+$$
+
+$$
+L=\frac{1}{\phi_1}
+\tag{7}
+$$
+
+
+denominada de raiz da equação. Identificar se existe raiz unitária no AR(1) é saber se L=1. No AR(1), L=1 quando $\phi_1=1$. Se $\phi_1=1$, L=1 e o processo possui raiz unitária;
+
+Se $|\phi_1|<1$, $|L|>1$, a raiz está fora do círculo unitário, não possui raiz unitária, a série é estacionária; 
+
+Se $|\phi_1|>1$, $|L|<1$, a série é dita explosiva, não estacionária, sem interesse para análise.
+
+<br>
+
+## Conceito de Integração
+
+<br>
+
+Uma série não estacionária possui comportamento de passeio aleatório, que é representado pela presença de raízes unitárias na equação característica da série. Esta, para se tornar estacionária, precisa ser diferenciada tantas vezes quanto for o número de raízes unitárias. Assim, tem-se o conceito de *séries integradas*; 
+
+Uma série é integrada de ordem d, designada por $Y_t \sim I(d)$, se for necessário diferenciá-la d vezes para torná-la estacionária; 
+
+<br>
+ 
+## Propriedades de Séries Integradas
+
+<br>
+
+Considere três séries $X_t, Y_t$ e $Z_t$. Tem-se as seguintes propriedades de séries integradas:
+
+1) Se $X_t \sim I(0)$ e $Y_t \sim I(1)$, então $Z_t=X_t+Y_t \sim I(1)$, isto é, uma combinação linear de séries estacionárias e não estacionárias é não estacionária; 
+
+2) Se $X_t \sim I(d)$, então $Z_t=a+bX_t \sim I(d)$, onde a e b são constantes. Em outras palavras, uma combinação linear de uma série I(d) também é uma série I(d); 
+
+3) Se $X_t \sim  I(d_1)$ e $Y_t \sim I(d_2)$ com $d_1 < d_2$, então, $Z_t=aX_t+bY_t \sim I(d_2)$ 
+
+4) Se $X_t \sim I(d)$ e $Y_t \sim I(d)$, então, $Z_t=aX_t+bY_t \sim I(d^*)$; $d^*$ em geral é igual a d, mas em alguns casos $d^* \leq d$.
+
+<br>
+
+## Determinação da Estacionariedade
+
+<br>
+
+Para identificar se uma série possui raiz unitária, deve-se realizar testes específicos desenvolvidos com esta finalidade. Existem diversos: DF (Dickey-Fuller), ADF (Dickey-Fuller aumentado), DF-GLS (Dickey-Fuller por minimos quadrados generalizados); Phillips-Perron, KPSS, etc. 
+
+Apresentamos aqui apenas o DF, ADF e o DF-GLS, que são os mais usados. No DF, considere um processo autorregressivo de ordem p, dado por:
+ 
+$$
+y_t=\rho y_{t-1}+\epsilon_t
+$$
+em que $\epsilon_t$ é um termo ruído branco, ou seja, possui média zero e variância constante. O que se deseja testar é se $\rho=1$, ou seja, y possui raiz unitária, sendo não estacionário. Perceba que com $\rho=1$ o processo AR acima se torna um passeio aleatório sem constante e todo PA é por definição não estacionário. Por conveniência estatística o teste é conduzido com a equação em primeira diferença.
+ 
+$$
+y_t-y_{t-1}=\rho y_{t-1}-y_{t-1}+\epsilon_t
+$$ 
+$$
+\Delta y_t=(\rho-1)y_{t-1}+\epsilon_t
+$$ 
+
+$$
+\Delta y_t=\delta y_{t-1}+\epsilon_t
+$$ 
+
+em que $\delta=\rho-1$. Se $\rho=1$, $\delta=0$. Desta forma, $\Delta y$ seria igual a um ruído branco, estacionário.
+
+Assim, a hipótese nula do teste é que $\delta=0$, ou seja, $\rho=1$ e a série possui raiz unitária, sendo estacionária na primeira diferença;
+
+A significância de $\delta$ segue uma distribuição tabulada por Dickey e Fuller denominada de $\tau$. 
+
+No teste, é possível definir na equação de teste se a mesma possui intercepto e tendência. No ADF, considere um processo autorregressivo de ordem p, dado por:
+
+$$
+\Delta y_t=\delta y_{t-1}+ \sum_{j=1}^{p-1} \rho_{j+1} \Delta y_{t-j}+\epsilon_t
+$$ 
+
+A diferença entre o DF e o ADF está na inclusão de termos de diferença defasados ($\Delta y_{t-j}$). 
+ 
+O objetivo de incluir estes termos de diferença defasados é tornar os erros serialmente independentes, dado que a existência de autocorrelação nos resíduos invalida os valores da distribuição $\tau$. 
+
+No mais, a estatística deste teste é a mesma do DF, sendo usado os valores críticos de $\tau$. 
+
+A hipótese nula deste teste é a mesma do DF, ou seja, a série possui raiz unitária, sendo não estacionaria.
+
+O teste ADF também pode incluir termos  determinísticos de intercepto e tendência. Como o mesmo possui termos de diferença defasados, tem-se o problema de determinar o numero de defasagens p.
+
+Para isto, deve-se usar os critérios de informação de Akaike ou Schwarz disponíveis nos softwares.
+
+<br>
+
+# Demonstração no R
+
+<br>
+
+## Entrada dos dados
+
+<br>
+
+```{r econ5_1, warning=FALSE, message=FALSE}
+#Direcionado o R para o Diretorio a ser trabalhado
+#setwd('/Users/jricardofl/Dropbox/tempecon/facape/econometria2')
+
+#Pacotes utilizados
+library(forecast)
+library(ggplot2)
+library(urca)
+library(tseries)
+#library(GetBCBData)
+library(magrittr)
+library(reshape2)
+library(rbcb)
+library(dplyr)
+library(tidyr)
+
+selic_ipca <- rbcb::get_series(
+    c("IPCA em 12 meses" = 13522, "Taxa SELIC" = 4189), 
+    start_date = "2003-01-01",
+    as = "tibble")
+
+# Correctly combining the two tibbles
+selic_ipca <- bind_rows(
+  selic_ipca$`IPCA em 12 meses` %>% 
+    rename(value = `IPCA em 12 meses`) %>%
+    mutate(variable = "IPCA em 12 meses"),
+  selic_ipca$`Taxa SELIC` %>% 
+    rename(value = `Taxa SELIC`) %>%
+    mutate(variable = "Taxa SELIC")
+)
+
+# Gráfico com o ggplot2
+selic_ipca %>% 
+  ggplot2::ggplot(ggplot2::aes(x = date, y = value, colour = variable)) +
+  ggplot2::geom_line(size = 1) +
+  ggplot2::labs(title = "Inflação vs. Taxa de Juros - Selic",
+                x = "",
+                y = "% a.a.",
+                caption = "Dados: SGS/BCB | Elaborado por:") +
+  ggplot2::scale_colour_manual(values = c(
+             "#282f6b", # blue
+             "#b22200" # red
+  )) +
+  ggplot2::facet_wrap(~variable, nrow = 2, scales = "free_y") +
+  ggplot2::theme_minimal()+
+  ggplot2::theme(legend.position = "none")
+```
+
+``` {r econ5_2}
+# FAC e FACp
+#Visualizando da série, da FAC e da FACp 
+
+# Separating the IPCA series
+ipca <- selic_ipca %>%
+  filter(variable == "IPCA em 12 meses") %>%
+  select(date, value) %>%
+  rename(IPCA = value)
+
+# Separating the SELIC series
+selic <- selic_ipca %>%
+  filter(variable == "Taxa SELIC") %>%
+  select(date, value) %>%
+  rename(Selic = value)
+
+ggtsdisplay(ipca$IPCA, main='IPCA')
+ggtsdisplay(selic$Selic, main='Selic')
+
+```
+
+<br>
+
+## Teste de Raiz Unitária DF (Dickey-Fuller)
+
+<br>
+
+``` {r econ5_3}
+
+#Estatistica de Teste DF para IPCA
+ipcan.df <- ur.df(ipca$IPCA, type = 'none', lags=0)
+summary(ipcan.df)
+
+ipcad.df <- ur.df(ipca$IPCA, type = 'drift', lags=0)
+summary(ipcad.df)
+
+ipcat.df <- ur.df(ipca$IPCA, type = 'trend', lags=0)
+summary(ipcat.df)
+```
+
+São três diferentes fórmulas para o DF, baseados nas três possibilidade de testes: nenhum, com constante e com tendência. Estas fórmulas levam a três diferentes hipóteses a ser testadas. Em todos os três casos, contudo, se testa se $\delta=0$ (o coeficiente do valor de y defasadado é igual a zero), ou seja, se existe uma raiz unitária. 
+
+Assim, para `` type="none" ``, o output irá mostrar tau1, o valor crítico (com diferentes níveis de significância) para a hipótese nula de $\delta=0$. 
+
+Para `` type="drift" ``, tau2 é o valor crítico para o teste de $\delta=0$. phi1 se refere a segunda hipótese, que é a hipótese nula combinada de que a constante $a_0=\delta=0$, ou seja, ambos valores são testados para ser iguais a zero ao mesmo tempo. 
+
+Finalmente, para `` type="trend" `` as hipóteses testadas são $tau3:\delta=0$; $phi3:\delta=a_2=0$, com $a_2$ igual ao coeficiente da tendência e  $phi2:a_0=\delta=a_2=0$.
+
+<br>
+
+
+## Teste de Raiz Unitária ADF (Dickey-Fuller Aumentado)
+
+<br>
+
+``` {r econ5_4}
+#Estatistica de Teste ADF para IPCA
+ipcan.adf <- ur.df(ipca$IPCA, type = 'none', selectlags='AIC')
+summary(ipcan.adf)
+
+ipcad.adf <- ur.df(ipca$IPCA, type = 'drift', selectlags='AIC')
+summary(ipcad.adf)
+
+ipcat.adf <- ur.df(ipca$IPCA, type = 'trend', selectlags='AIC')
+summary(ipcat.adf)
+```
+
+<br>
+
+## Teste de Raiz Unitária Phillips-Perron e KPSS
+
+<br>
+
+
+``` {r econ5_5}
+#Estatistica de Teste PP para IPCA
+ipca.pp <- ur.pp(ipca$IPCA, type = 'Z-tau', model="trend", lags='short')
+summary(ipca.pp)
+
+#Estatistica de Teste KPSS para IPCA
+ipca.kpss <- ur.kpss(ipca$IPCA, type = 'tau', lags='short')
+summary(ipca.kpss)
+```
+
+<br>
+
+# Determinação da Estacionariedade
+
+<br>
+
+Um teste de segunda geração, mais poderoso e, por isto, aconselhado a ser usado, é o DF-GLS. O teste DF-GLS é uma versão modificada do teste ADF. A diferença é devido a uma alteração na série por meio de uma regressão por Mínimos Quadrados Generalizados (MQG) antes de executar o teste ADF.
+
+Esse teste foi desenvolvido por Elliot et al. (1996), sugerindo uma mudança no ADF, em que retira-se as variáveis explicativas relativas a tendência determinística (constante e coeficientes de tendência), por meio de uma diferenciação na série. Existem duas possíveis hipóteses alternativas: a série é estacionária em torno de uma tendência linear ou é estacionária sem uma tendência linear.
+
+Com relação a primeira alternativa, o teste DF-GLS é realizado inicialmente estimando o intercepto e a tendência via MQG, incluindo novas variáveis $\tilde{y}, x_t$ e $z_t$, em que
+
+$$
+\tilde{y}=\left\{\begin{array}{rcc}
+  y_t &\mbox{se} & t=1 \\
+  y_t-ay_{t-1} & & t>1.
+  \end{array}\right.
+$$
+$$
+x_t=\left\{\begin{array}{rcc}
+    1 &\mbox{se} & t=1 \\
+    1-a & & t>1.
+    \end{array}\right.
+$$
+
+$$
+z_t=\left\{\begin{array}{rcc}
+      1 &\mbox{se} & t=1 \\
+      t-a(t-1) & & t>1.
+      \end{array}\right.
+$$
+
+e $a=1-\frac{13,5}{T}$
+
+Estima-se, então, uma regressão por MQO
+
+$$
+\tilde{y}=\delta_0x_t+\delta_1z_t+\epsilon_t
+$$ 
+os estimadores $\hat{\delta_0}$ e  $\hat{\delta_1}$ são usados para se retirar a tendência dos dados, gerando uma nova série $y^*_t$. O passo seguinte é estimar um ADF na variável transformada
+
+$$
+\Delta y^*_t=\alpha+\beta y^*_{t-1}+ \sum_{j=1}^{k}\xi_j\Delta y^*_{t-j}+\epsilon_t
+$$
+e verificar se $\beta=0$
+
+No caso da segunda hipótese alternativa $a=1-\frac{7}{T}$, se elimina z da regressão (1) e estima (2) sobre a variável transformada, verificando se $\beta=0$.  Os lags são escolhidos pelo critério de Schwarz $=[12(\frac{T}{100})^{1/4}]$ .
+
+<br>
+
+## Estimação do DF-GLS no R
+
+<br>
+
+``` {r econ5_6}
+#Verificaçao da Estacionariedade das séries
+#Teste de raiz unitaria DF-GLS
+#Definção do numero máximo de lags
+print(12*(length(ipca$IPCA)/100)^(1/4))
+print(12*(length(selic$Selic)/100)^(1/4))
+
+#Estatistica de Teste DFGLS para IPCA Com Constante
+
+ipcaC.dfgls <- ur.ers(ipca$IPCA, type = c("DF-GLS"),
+                        model = c("constant"),
+                        lag.max = 15)
+summary(ipcaC.dfgls)
+
+#Estatistica de Teste DFGLS para IPCA Com Tendência
+
+ipcaT.dfgls <- ur.ers(ipca$IPCA, type = c("DF-GLS"),
+                     model = c("trend"),
+                     lag.max = 15)
+summary(ipcaT.dfgls)
+
+
+#Estatistica de Teste DFGLS para Selic
+selicC.dfgls <- ur.ers(selic$Selic, type = c("DF-GLS"),
+                      model = c("constant"),
+                      lag.max = 15)
+summary(selicC.dfgls)
+
+selicT.dfgls <- ur.ers(selic$Selic, type = c("DF-GLS"),
+                      model = c("trend"),
+                      lag.max = 15)
+summary(selicT.dfgls)
+
+#Estatistica de Teste DFGLS para Selic
+selicC.dfgls <- ur.ers(selic$Selic, type = c("DF-GLS"),
+                      model = c("constant"),
+                      lag.max = 5)
+summary(selicC.dfgls)
+
+selicT.dfgls <- ur.ers(selic$Selic, type = c("DF-GLS"),
+                      model = c("trend"),
+                      lag.max = 4)
+summary(selicT.dfgls)
+```
+
+Para o IPCA com constante ou tendência e 15 lags, em modulo o valor da estatistica de teste é menor do que o valor critico de 10%. Assim, não se pode rejeitar a hipótese nula de que a serie possui raiz unitária. 
+
+No caso da SELIC, o valor da estatística de teste também é menor do que o valor crítico, tanto com constante quanto com tendência. Assim, conclui-se que também não pode rejeitar a hipótese nula de que a série possui raiz unitária, ou seja, a série também não é estacionária.  
+      
+<br>
+
+# Processo Tendência e Diferença Estacionário
+
+<br>      
+      
+A não estacionariedade de uma série tem relação com a presença de tendência na série, seja determinística ou estocástica. Se uma série tiver raiz unitária e sua diferenciação torná-la estacionária ela é dita processo estacionário em diferenças. Existem ainda as séries com tendência determinística, denominadas de série tendência estacionária pois flutuam em torno da tendência determinística. Para tornar a série estacionária, deve-se remover a tendência corretamente. Se for determinística, pegando os resíduos de uma regressão que estima a tendência. Se for estocástica, via diferenciação da série;
+
+
+# Análise no Python
+
+```{python}
+# Import necessary libraries
+from bcb import sgs
+import pandas as pd
+from plotnine import ggplot, aes, geom_line, labs, theme_minimal, theme, scale_color_manual, facet_wrap, scale_x_datetime
+import plotnine as p9
+
+# Define the series codes
+series = {
+    'IPCA em 12 meses': 13522,
+    'Taxa SELIC': 4189
+}
+
+# Fetch data from 2003-01-01
+data = sgs.get(series, start='2003-01-01')
+
+# Redefinir índice para obter 'data' como uma coluna
+data = data.reset_index()
+
+# Remodele os dados para o formato longo para plotnine
+data_long = pd.melt(data, id_vars=['Date'], var_name='variable', value_name='value')
+
+# Plot usando plotnine
+plot = (
+    p9.ggplot(data_long, p9.aes(x='Date', y='value', color='variable')) +
+    p9.geom_line(size=1) +
+    p9.labs(title='Inflação vs. Taxa de Juros - Selic',
+            x='',
+            y='% a.a.',
+            caption='Dados: SGS/BCB | Elaborado por:') +
+    p9.scale_color_manual(values=['#282f6b', '#b22200']) +  # Cores Customizadas
+    p9.facet_wrap('~variable', nrow=2, scales='free_y') +  
+    p9.scale_x_datetime(
+        breaks=pd.to_datetime(['2005-01-01', '2010-01-01', '2015-01-01', '2020-01-01', '2025-01-01']),
+        labels=['2005', '2010', '2015', '2020', '2025']
+    ) +
+    p9.theme_minimal() +
+    p9.theme(
+      figure_size=(12, 6),
+      legend_position='none'
+    )
+)
+
+#Exibe o gráfico
+plot.show()
+
+```
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+
+# Extrai o IPCA dos dados
+ipca = data[['Date', 'IPCA em 12 meses']].copy()
+ipca = ipca.rename(columns={'IPCA em 12 meses': 'value'})  # renomeia a coluna
+ipca = ipca.dropna()
+
+# Converte a coluna 'Date' para datetime and configura como index
+ipca['Date'] = pd.to_datetime(ipca['Date'])
+ipca.set_index('Date', inplace=True)
+
+# Plota IPCA, FAC, e FACpa
+fig, axes = plt.subplots(3, 1, figsize=(10, 12))
+
+# Plota IPCA 
+ipca['value'].plot(ax=axes[0], title='IPCA', color='blue')
+axes[0].set_ylabel('% a.a.')
+
+# Plota FAC
+plot_acf(ipca['value'], ax=axes[1], title='FAC (Função de Autocorrelação)')
+
+# Plota FACp
+plot_pacf(ipca['value'], ax=axes[2], title='FACp (Função de Autocorrelação Parcial)', method='ywm')
+
+plt.tight_layout()
+plt.show()
+
+```
+
+```{python}
+# Extrai SELIC dos dados
+selic = data[['Date', 'Taxa SELIC']].copy()
+selic = selic.rename(columns={'Taxa SELIC': 'value'})  # Renomeia a coluna
+selic = selic.dropna()
+
+# Converte coluna 'Date' para datetime e configura como index
+selic['Date'] = pd.to_datetime(selic['Date'])
+selic.set_index('Date', inplace=True)
+
+# Plota IPCA FAC e FACp
+fig, axes = plt.subplots(3, 1, figsize=(10, 12))
+
+# Plota IPCA
+selic['value'].plot(ax=axes[0], title='SELIC', color='blue')
+axes[0].set_ylabel('% a.a.')
+
+# Plota FAC
+plot_acf(selic['value'], ax=axes[1], title='FAC (Função de Autocorrelação)')
+
+# Plota FACp
+plot_pacf(selic['value'], ax=axes[2], title='FACp (Função de Autocorrelação Parcial)', method='ywm')
+
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+from statsmodels.tsa.stattools import adfuller
+
+# Executa o teste Dickey-Fuller
+result = adfuller(ipca['value'], autolag=None, maxlag=0, regression='n')  # 'c' é o equivalente a 'none' no R
+
+# Exibe os resultados
+print("Estatística do Teste Dickey-Fuller: {:.4f}".format(result[0]))
+print("p-valor: {:.4f}".format(result[1]))
+for key, value in result[4].items():
+    print('Valor Crítico ({}): {:.4f}'.format(key, value))
+
+```
+
+```{python}
+# Executa o teste Dickey-Fuller com drift (constante, sem tendência)
+result_drift = adfuller(ipca['value'], autolag=None, maxlag=0, regression='c')  # 'c' para constante (drift)
+
+# Exibe os resultados
+print("Estatística do Teste Dickey-Fuller (Drift): {:.4f}".format(result_drift[0]))
+print("p-valor: {:.4f}".format(result_drift[1]))
+for key, value in result_drift[4].items():
+    print('Valor Crítico ({}): {:.4f}'.format(key, value))
+
+```
+
+```{python}
+# Executa o teste Dickey-Fuller com tendência (constante + tendência linear)
+result_trend = adfuller(ipca['value'], autolag=None, maxlag=0, regression='ct')  # 'ct' para constante + tendência
+
+# Exibe os resultados
+print("Estatística do Teste Dickey-Fuller (Tendência): {:.4f}".format(result_trend[0]))
+print("p-valor: {:.4f}".format(result_trend[1]))
+for key, value in result_trend[4].items():
+    print('Valor Crítico ({}): {:.4f}'.format(key, value))
+```
+
+```{python}
+# Executa o teste ADF com seleção automática de defasagens pelo AIC e sem constante
+result_adf = adfuller(ipca['value'], autolag='AIC', regression='n')  # 'n' para sem constante (equivalente a 'none')
+
+# Exibe os resultados
+print("Estatística do Teste ADF: {:.4f}".format(result_adf[0]))
+print("p-valor: {:.4f}".format(result_adf[1]))
+print("Número de defasagens selecionadas: {}".format(result_adf[2]))
+for key, value in result_adf[4].items():
+    print('Valor Crítico ({}): {:.4f}'.format(key, value))
+
+```
+
+```{python}
+# Executa o teste ADF com seleção automática de defasagens pelo AIC e sem constante
+result_adf_drift = adfuller(ipca['value'], autolag='AIC', regression='c')  # 'n' para sem constante (equivalente a 'none')
+
+# Exibe os resultados
+print("Estatística do Teste ADF: {:.4f}".format(result_adf_drift[0]))
+print("p-valor: {:.4f}".format(result_adf_drift[1]))
+print("Número de defasagens selecionadas: {}".format(result_adf_drift[2]))
+for key, value in result_adf_drift[4].items():
+    print('Valor Crítico ({}): {:.4f}'.format(key, value))
+
+```
+
+```{python}
+# Executa o teste ADF com seleção automática de defasagens pelo AIC e sem constante
+result_adf_trend = adfuller(ipca['value'], autolag='AIC', regression='ct')  # 'n' para sem constante (equivalente a 'none')
+
+# Exibe os resultados
+print("Estatística do Teste ADF: {:.4f}".format(result_adf_trend[0]))
+print("p-valor: {:.4f}".format(result_adf_trend[1]))
+print("Número de defasagens selecionadas: {}".format(result_adf_trend[2]))
+for key, value in result_adf_trend[4].items():
+    print('Valor Crítico ({}): {:.4f}'.format(key, value))
+
+```
+
+```{python}
+from arch.unitroot import PhillipsPerron
+
+# Executa o teste Phillips-Perron com constante + tendência linear e defasagens curtas
+pp_test = PhillipsPerron(ipca['value'], trend='ct', lags=3)  # 'ct' para constante + tendência, lags curtos
+
+# Exibe os resultados
+print("Estatística do Teste PP (Z-tau): {:.4f}".format(pp_test.stat))
+print("p-valor: {:.4f}".format(pp_test.pvalue))
+print("Número de defasagens usadas: {}".format(pp_test.lags))
+
+# Exibe os valores críticos
+for key, value in pp_test.critical_values.items():
+    print('Valor Crítico ({}): {:.4f}'.format(key, value))
+
+```
+
+```{python}
+from statsmodels.tsa.stattools import kpss
+
+# Executa o teste KPSS com seleção automática de defasagens
+stat, p_value, lags, critical_values = kpss(ipca['value'], regression='ct', nlags='auto')  # 'auto' para defasagens automáticas
+
+# Exibe os resultados
+print("Estatística do Teste KPSS: {:.4f}".format(stat))
+print("p-valor: {:.4f}".format(p_value))
+print("Número de defasagens usadas: {}".format(lags))
+
+# Exibe os valores críticos
+for key, value in critical_values.items():
+    print('Valor Crítico ({}): {:.4f}'.format(key, value))
+
+```
+
+```{python}
+from arch.unitroot import DFGLS
+
+# Executa o teste DF-GLS com seleção automática de defasagens
+dfgls_test = DFGLS(ipca['value'], lags=None, trend='c')  # 'ct' para constante + tendência. Apenas c = constante.
+
+# Exibe os resultados
+print("Estatística do Teste DF-GLS: {:.4f}".format(dfgls_test.stat))
+print("p-valor: {:.4f}".format(dfgls_test.pvalue))
+print("Número de defasagens selecionadas: {}".format(dfgls_test.lags))
+
+# Exibe os valores críticos
+for key, value in dfgls_test.critical_values.items():
+    print('Valor Crítico ({}): {:.4f}'.format(key, value))
+
+```
+
+```{python}
+from arch.unitroot import DFGLS
+
+# Executa o teste DF-GLS com seleção automática de defasagens
+dfgls_test = DFGLS(ipca['value'], lags=None, trend='ct')  # 'ct' para constante + tendência. Apenas c = constante.
+
+# Exibe os resultados
+print("Estatística do Teste DF-GLS: {:.4f}".format(dfgls_test.stat))
+print("p-valor: {:.4f}".format(dfgls_test.pvalue))
+print("Número de defasagens selecionadas: {}".format(dfgls_test.lags))
+
+# Exibe os valores críticos
+for key, value in dfgls_test.critical_values.items():
+    print('Valor Crítico ({}): {:.4f}'.format(key, value))
+
+```
+
