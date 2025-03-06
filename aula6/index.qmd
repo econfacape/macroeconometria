@@ -1,0 +1,849 @@
+---
+title: "Aula 6 - Econometria de Séries Temporais"
+author: "João Ricardo F. de Lima"
+date: "today"
+editor: source
+lang: pt
+language: 
+  toc-title-document: '<a href="https://www.facape.br/" target="_blank"><img src="https://github.com/econfacape/macroeconometria/blob/main/logofacape.jpg?raw=true" alt="Logotipo Facape" width="150"></a>'
+format: 
+  html:
+    toc: true
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+    toc-location: left
+    code-fold: false
+    embed-resources: true
+    page-layout: full
+    fig-width: 10
+    fig-height: 8
+    fig-align: center
+    df-print: paged
+    fontsize: 13pt
+theme:
+  light: flatly
+execute:
+  echo: TRUE
+  message: false
+  warning: false
+---
+
+<br>
+
+# Metodologia de Box-Jenkins
+
+<br>
+
+Nos anos 70, Box e Jenkins utilizam da análise de "correlogramas" para identificar se uma série era I(0) ou não e para identificar as ordens "p" e "q" do modelo. Posteriormente, foram definidos testes estatísticos com tal finalidade, denominados de testes de raiz unitária, já vistos. Segundo a metodologia de Box-Jenkins, a análise de séries temporais tem por objetivo principal a realização de previsões.
+
+Esta metodologia permite fazer previsões com base nos valores contemporâneos e passados explorando a correlação temporal entre os valores realizados pela série. O primeiro passo da metodologia é a *Identificação*. Isto significa descobrir qual dos possíveis modelos ARIMA descreve o comportamento da série. Filosofia: "Deixem os dados falarem por si mesmos". Em outras palavras, é identificar os valores de "p", "d" e "q". Isto não pode ser feito apenas com a observação visual da série.
+
+O primeiro passo na identificação é avaliar se a série é estacionária. Se não for, a série deve ser diferenciada "d" vezes até se tornar estacionária.  Sendo a série original ou diferenciada, estacionária, o próximo passo é determinar se é gerada por um termo AR(p), MA(q) ou ARMA(p,q), além dos próprios valores de "p" e "q".
+
+De forma resumida e simplificada, o comportamento da FAC e FACp pode ser dado por:
+
+<br>
+
+<center>Tabela 1: Comportamento da FAC e FACp: </center>
+
+| \hline    Processo  | FAC          | FACP         |
+|:-------------------:|:------------:|:------------:|
+| \hline        AR(p) | Declinante   | Truncada k=p |
+| MA(q)               | Truncada k=p | Declinante   |
+| ARMA(p,q)           | Declinante   | Declinante   |
+
+<br>
+
+A **identificação** é a mais difícil das etapas da metodologia de Box e Jenkins. Normalmente mais de um modelo é escolhido para testar se é o gerador da série. Uma possibilidade é escolher o modelo com base nos critérios de Akaike (AIC) e Schwarz (BIC). 
+
+A segunda etapa é a **estimação** do modelo, sempre considerando o princípio da parcimônia.
+
+A terceira etapa é a **verificação**: verificar se o modelo é adequado. A forma mais comum é a análise dos resíduos. Na análise dos resíduos deve-se verificar se o comportamento é de um ruído branco. Para isto, pode-se fazer um correlograma dos resíduos.
+
+A quarta etapa é a **previsão**.
+
+<br>
+
+# Estimação no R - Metodologia de Box-Jenkins
+
+<br>
+
+Considere a série temporal abaixo: O índice de Nível de Atividade do Banco Central (IBC-Br), disponível a partir de 2003. O IBC-Br se constitui em um indicador de periodicidade mensal que incorpora a trajetária das variáveis consideradas como proxies para o desempenho dos setores da economia. Dado que o PIB é calculado pelo IBGE é uma variável trimestral, logo existe procura para índices de base mensal que busquem medir o comportamento do nível de atividade. O IBC-Br atender esta demanda.
+
+``` {r econ6_1}
+library(feasts)
+library(fabletools)
+library(fable)
+library(tsibble)
+library(tsibbledata)
+library(rbcb)
+library(ggplot2)
+library(dplyr)
+library(urca)
+library(forecast)
+
+# ibc-br
+ibc_br <- rbcb::get_series(
+  code = c("ibc.sa" = 24364), 
+  start_date = "2003-01-01"
+)  |> 
+  # é necessário alterar o tipo da coluna de data para yearmonth
+  dplyr::mutate(date = tsibble::yearmonth(date)) |> 
+  # transforma a classe para tsibble
+  tsibble::as_tsibble(index = date)
+
+ibc_br|> fabletools::autoplot()
+```
+
+## FAC e FACp
+
+<br>
+
+```{r econ6_2}
+# Calcula o FAC do ibc_br e Plota
+feasts::ACF(ibc_br, y = ibc.sa, lag_max = 36) |> 
+  fabletools::autoplot() +
+  ggplot2::labs(title = "Função de Autocorrelação do IBC-BR SA a.m%")
+
+# Calcula o FACp do ibc_br e Plota
+feasts::PACF(ibc_br, y = ibc.sa, lag_max = 36) |> 
+  fabletools::autoplot() +
+  ggplot2::labs(title = "Função de Autocorrelação Parcial do IBC-BR SA a.m%")
+```
+
+```{r econ6_3}
+feasts::gg_tsdisplay(ibc_br, y = ibc.sa, plot_type = "partial")
+```
+
+```{r econ6_4}
+feasts::gg_subseries(ibc_br, ibc.sa)
+```
+
+
+Os Correlogramas da série em nível, mostrado acima, indicam que a mesma não deve ser estacionária.
+
+<br>
+
+## Teste de Raiz Unitária
+
+<br>
+
+```{r econ6_5}
+#Analise dos testes de raiz unitaria em nivel
+#Definicao do numero maximo de lags
+print(12*(length(ibc_br[,2])/100)^(1/4))
+
+ibc.dfgls <- ur.ers(ibc_br$ibc.sa, 
+                    type = "DF-GLS",
+                    model = "trend",
+                    lag.max = 15)
+
+summary(ibc.dfgls)
+```
+
+``` {r econ6_6}
+#Estatistica de Teste DFGLS para DCP
+ibc1.dfgls <- ur.ers(ibc_br$ibc.sa, 
+                    type = "DF-GLS",
+                    model = "trend",
+                    lag.max = 1)
+
+summary(ibc1.dfgls)
+```
+
+``` {r econ6_7}
+unitroot_ndiffs(ibc_br$ibc.sa)
+unitroot_nsdiffs(ibc_br$ibc.sa) #numero de diferenciaçoes sazonais
+```
+
+<br>
+
+O teste de raiz unitária DF-GLS da série em nível, leva a  conclusão de que a série não é estacionária em nível. Não rejeita a hipótese nula de que possui raiz unitária.
+
+<br>
+
+## Análise da série na 1 Diferença
+
+Os Correlogramas da série na primeira diferença, mostrado abaixo, indicam que a mesma pode ser estacionária.  
+
+```{r econ6_8}
+# Cria um novo tsibble com a primeira diferença da série ibc.sa
+ibc_br_diff <- ibc_br |> 
+  mutate(ibc.sa_diff = difference(ibc.sa, differences = 1))
+
+# Plota com a série de primeira diferença
+feasts::gg_tsdisplay(ibc_br_diff, y = ibc.sa_diff, plot_type = "partial")
+```
+
+O teste de raiz unitária DF-GLS com a variável ibc.br na primeira diferença leva a conclusão de que, considerando uma significância de 10\%, rejeita a Hipótese Nula de que a série possui raiz unitária, ou seja, a série é estacionária. 
+
+``` {r econ6_9}
+#Estatistica de Teste DFGLS para DCP
+ibc1.dfgls <- ur.ers(ibc_br_diff$ibc.sa_diff, 
+                    type = "DF-GLS",
+                    model = "constant",
+                    lag.max = 1)
+
+summary(ibc1.dfgls)
+```
+
+<br>
+
+## Estimacao do Modelo ARIMA usando a função auto.arima
+
+<br>
+
+Existem duas formas de estimação dos modelos ARIMA, uma delas é observando o correlograma e a outra é usando a função `` auto.arima`` do pacote forecast ou o ``ARIMA`` do pacote fable..
+
+```{r econ6_10}
+auto.arima <- auto.arima(ibc_br$ibc.sa, max.p=10, max.d=1, max.q=10, trace=TRUE)
+
+summary(auto.arima)
+```
+
+```{r econ6_11}
+fit_arima <- ibc_br |>
+  fabletools::model(
+    arima_auto = fable::ARIMA(ibc.sa)
+    )
+
+# Resultados agregados
+fabletools::tidy(fit_arima)
+```
+
+<br>
+
+## Diagnóstico do Modelo
+
+<br>
+
+```{r econ6_12}
+# ARIMA(1, 1, 1): Correlograma ACF e Distribuição
+fit_arima |>
+  dplyr::select(arima_auto) |>
+  feasts::gg_tsresiduals()
+
+# ARIMA(0, 1, 1): teste de autocorrelação Ljung-Box
+fit_arima |>
+  dplyr::select(arima_auto) |>
+  fabletools::augment() |>
+  fabletools::features(.innov, feasts::ljung_box, lag = 24, dof = 1)
+```
+
+<br>
+
+## Previsões
+
+<br>
+
+### Restrição da amostra (teste e treino)
+
+<br>
+
+```{r econ6_13}
+# Restringir dados (amostra de treino)
+dados_treino <- ibc_br |>
+  dplyr::slice(1:(dplyr::n() - 12))
+
+# Dados usados para comparar previsão (amostra de teste)
+dados_teste <- ibc_br |>
+  dplyr::filter(date > max(dados_treino$date))
+
+# Reestimar modelos com restrição de amostra
+fit_arima_treino <- dados_treino |>
+  fabletools::model(
+    arima011 = fable::ARIMA(ibc.sa ~ 1 + pdq(1, 1, 1))
+    )
+
+# Previsões do ARIMA
+fc_arima <- fit_arima_treino |>
+  fabletools::forecast(h = 12)
+
+# Plotando as previsões vs. observado
+fc_real <- fc_arima |> 
+  as_tsibble() |> 
+  dplyr::select(ibc.sa = .model, values = .mean) |> 
+  dplyr::bind_rows(dados_teste |>
+                     tidyr::pivot_longer(!date, names_to = "ibc.sa", values_to = "values")
+                   ) 
+
+fc_real |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(x = date, y = values, color = ibc.sa) +
+  ggplot2::geom_line(size = 1.5) +
+  ggplot2::labs(title = "IBC-BR SA observado vs. previsto")
+```
+
+<br>
+
+### Acurácia
+
+<br>
+
+```{r econ6_14}
+fabletools::accuracy(fc_arima, dados_teste)
+```
+
+Em relação a acurácia dos modelos usando o R, [clique aqui](https://analisemacro.com.br/economia/macroeconometria/avaliando-previsoes-com-o-r/) e [clique aqui](https://analisemacro.com.br/econometria-e-machine-learning/introducao-a-estrategias-de-previsao-macroeconometrica-aplicacoes-em-r-e-python/) para lerem dois posts bastante úteis. 
+
+O que se pode considerar é que, com as medidas oferecidas pelo programa, se busca o modelo que apresente os menores valores para todas estas medidas.
+
+<br>
+
+### Previsão Fora da Amostra
+
+<br>
+
+```{r econ6_15}
+# Reestimar modelos com restrição de amostra
+fit_arima_full <- ibc_br |>
+  fabletools::model(
+    arima011 = fable::ARIMA(ibc.sa ~ 1 + pdq(1, 1, 1))
+    )
+
+# Previsões do ARIMA
+fc_arima_full <- fabletools::forecast(fit_arima_full, h = 12)
+
+# Visualizar previsões
+fabletools::autoplot(
+  object = fc_arima_full,
+  data   = dplyr::slice_tail(ibc_br, n = 36),
+  size   = 1
+  )
+```
+
+
+# Análise no Python
+
+## Baixar e fazer gráfico da série
+
+```{python econ6_16}
+from bcb import sgs
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+import statsmodels.tsa.api as tsa
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.stats.diagnostic import acorr_ljungbox
+from statsmodels.stats.stattools import jarque_bera
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.arima.model import ARIMA
+import matplotlib.pyplot as plt
+from plotnine import *
+import plotnine as p9
+import seaborn as sns
+from pmdarima import auto_arima
+from arch.unitroot import DFGLS
+import scipy.stats as stats
+from sklearn.metrics import mean_absolute_error, mean_squared_error, mean_absolute_percentage_error
+```
+
+```{python econ6_17}
+# Define a série com dicionário, mesmo que seja uma só
+series = {
+    'ibc_sa': 24364
+}
+
+# Baixar a série do IBC-BR
+ibc_br = sgs.get(series, start='2003-01-01')
+
+# Redefinir índice para obter 'date' como uma coluna
+ibc_br = ibc_br.reset_index()
+
+# Exibir as primeiras linhas para conferir
+print(ibc_br.head())
+
+# Transformar a coluna 'Date' para datetime, se necessário
+ibc_br['Date'] = pd.to_datetime(ibc_br['Date'])
+
+# Plot com plotnine
+plot = (
+    p9.ggplot(ibc_br, p9.aes(x='Date', y='ibc_sa')) +
+    p9.geom_line(color='blue', size=1) +
+    p9.labs(title='IBC-BR Dessazonalizado', x='Ano', y='IBC-BR') +
+    p9.theme_minimal() +
+    p9.theme(
+      figure_size=(12, 6)
+    )
+
+)
+
+plot.show()
+
+```
+
+### Gráfico, FAC e FACp
+
+```{python econ6_18}
+#from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+
+ibc_br = ibc_br.dropna()
+
+# Converte a coluna 'Date' para datetime and configura como index
+ibc_br['Date'] = pd.to_datetime(ibc_br['Date'])
+ibc_br.set_index('Date', inplace=True)
+
+# Plota IPCA, FAC, e FACpa
+fig, axes = plt.subplots(3, 1, figsize=(10, 12))
+
+# Plota IPCA 
+ibc_br['ibc_sa'].plot(ax=axes[0], title='IBC-SA Dessazonalizado', color='blue')
+axes[0].set_ylabel('Nível do IBC-SA')
+
+# Plota FAC
+plot_acf(ibc_br['ibc_sa'], ax=axes[1], title='FAC (Função de Autocorrelação)')
+
+# Plota FACp
+plot_pacf(ibc_br['ibc_sa'], ax=axes[2], title='FACp (Função de Autocorrelação Parcial)', method='ywm')
+
+plt.tight_layout()
+plt.show()
+```
+
+### Teste de Raiz Unitária DF-GLS
+
+```{python econ6_19}
+# Executa o teste DF-GLS com seleção automática de defasagens
+dfgls_test = DFGLS(ibc_br['ibc_sa'], lags=None, trend='ct')  # 'ct' para constante + tendência. Apenas c = constante.
+
+# Exibe os resultados
+print(dfgls_test.summary())
+```
+
+### Primeira Diferença
+
+```{python econ6_20}
+# Criar uma coluna para a primeira diferença da série ibc_sa
+ibc_br['ibc_sa_diff'] = ibc_br['ibc_sa'].diff()
+
+ibc_br = ibc_br.dropna()
+
+# Converte a coluna 'Date' para datetime and configura como index
+#ibc_br['Date'] = pd.to_datetime(ibc_br['Date'])
+#ibc_br.set_index('Date', inplace=True)
+
+# Plota IPCA, FAC, e FACpa
+fig, axes = plt.subplots(3, 1, figsize=(10, 12))
+
+# Plota IPCA 
+ibc_br['ibc_sa_diff'].plot(ax=axes[0], title='IBC-SA Dessazonalizado na Primeira Diferença', color='blue')
+axes[0].set_ylabel('IBC-SA')
+
+# Plota FAC
+plot_acf(ibc_br['ibc_sa_diff'], ax=axes[1], title='FAC (Função de Autocorrelação)')
+
+# Plota FACp
+plot_pacf(ibc_br['ibc_sa_diff'], ax=axes[2], title='FACp (Função de Autocorrelação Parcial)', method='ywm')
+
+plt.tight_layout()
+plt.show()
+```
+
+```{python econ6_21}
+# Executa o teste DF-GLS com seleção automática de defasagens com a série na 1 diferença
+dfgls_test_diff = DFGLS(ibc_br['ibc_sa_diff'], lags=None, trend='c')  # 'ct' para constante + tendência. Apenas c = constante.
+
+# Exibe os resultados
+print(dfgls_test_diff.summary())
+```
+
+### Estimação do Modelo ARIMA
+
+```{python econ6_22}
+#Estimação do modelo ARIMA automatico no Python
+model = auto_arima(
+    ibc_br['ibc_sa'].dropna(),
+    order=(0, 1, 1),
+    seasonal_order=(0, 0, 1, 12),  # Sazonalidade semanal (52 semanas)
+    seasonal=True,
+    trace=True
+)
+print(model.summary())
+```
+
+### Outra forma de Estimar o Modelo ARIMA
+
+```{python econ6_23}
+#from statsmodels.tsa.arima.model import ARIMA
+
+# Estimar ARIMA(1,1,1) manualmente
+#model_sarima = SARIMAX(
+#    ibc_br['ibc_sa'].dropna(),
+#    order=(0, 1, 1),                 # Parte não sazonal
+#    seasonal_order=(0, 0, 1, 12),    # Parte sazonal (ajuste '12' conforme necessário)
+#    trend='t'                        # Inclui tendência linear
+#)
+
+#model_fit = model_sarima.fit()
+
+# Exibir resumo
+#print(model_fit.summary())
+```
+
+### Diagnóstico do Modelo
+
+```{python econ6_24}
+# Obter os resíduos do modelo ARIMA ajustado
+residuos = model.resid()
+
+# Criar subplots com layout ajustado para 3 gráficos (2 linhas, 1 coluna)
+fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+
+# Gráfico da série dos resíduos
+axes[0].plot(residuos, color='blue')
+axes[0].set_title('Resíduos do Modelo ARIMA')
+axes[0].set_ylabel('Resíduos')
+
+# Gráfico FAC dos resíduos
+plot_acf(residuos, ax=axes[1], title='FAC (Autocorrelação)')
+
+plt.tight_layout()
+plt.show()
+
+# Histograma dos resíduos em um gráfico separado
+plt.figure(figsize=(6, 4))
+sns.histplot(residuos, bins=20, kde=True, color='blue')
+plt.title('Histograma dos Resíduos')
+plt.show()
+
+
+```
+
+```{python econ6_25}
+# Teste de Ljung-Box para os resíduos
+# Obter os resíduos do modelo ajustado
+#residuos2 = pd.Series(model.fit())
+
+# Aplicar o teste de Ljung-Box nos resíduos
+ljung_box_test = acorr_ljungbox(residuos, lags=[10, 20, 24], return_df=True)
+
+# Exibir os resultados
+print("Teste de Ljung-Box nos Resíduos do auto_arima:")
+print(ljung_box_test)
+
+```
+
+```{python econ6_26}
+#Teste de Normalidade
+#from statsmodels.stats.stattools import jarque_bera
+
+jb_test = jarque_bera(residuos)
+print(f"Estatística Jarque-Bera: {jb_test[0]}, p-valor: {jb_test[1]}")
+
+```
+
+### Previsão 
+
+```{python econ6_27}
+
+# 1. Separação dos dados em treino e teste
+dados_treino = ibc_br.iloc[:-12]  # Exclui os últimos 12 registros (treino)
+dados_teste = ibc_br.iloc[-12:]    # Últimos 12 registros (teste)
+
+# 2. Estimação do modelo ARIMA(1, 1, 1) com constante
+model_arima_treino = ARIMA(dados_treino['ibc_sa'], order=(1, 1, 1), trend='t')
+fit_arima_treino = model_arima_treino.fit()
+
+# 3. Previsões para 12 passos à frente
+fc_arima = fit_arima_treino.get_forecast(steps=12)
+fc_arima_index = pd.date_range(start=dados_teste.index[0], periods=12, freq='ME')
+
+# 4. DataFrame com previsões
+fc_arima_df = pd.DataFrame({
+    'date': pd.to_datetime(fc_arima_index),
+    'values': fc_arima.predicted_mean.astype(float),
+    'tipo': 'Previsão'  # Indicar que são previsões
+})
+
+# 5. Ajuste do DataFrame de teste
+dados_teste_df = dados_teste.copy().reset_index().rename(columns={'Date': 'date'})
+dados_teste_df['date'] = pd.to_datetime(dados_teste_df['date'])
+dados_teste_df['tipo'] = 'Observado'  # Indicar que são observações
+dados_teste_df = dados_teste_df.rename(columns={'ibc_sa': 'values'})
+dados_teste_df['values'] = pd.to_numeric(dados_teste_df['values'], errors='coerce')
+
+# 6. União dos DataFrames (observado vs. previsão)
+fc_real = pd.concat([dados_teste_df, fc_arima_df])
+fc_real['date'] = pd.to_datetime(fc_real['date'])  # Garantir datetime
+
+# 7. Gráfico: Observado vs. Previsto
+plot = (
+    p9.ggplot(fc_real, p9.aes(x='date', y='values', color='tipo')) +
+    p9.geom_line(size=1.5) +
+    p9.labs(title="IBC-BR SA Observado vs. Previsto") +
+    p9.theme_minimal() +
+    p9.theme(
+      figure_size=(12, 6)
+    )
+)
+plot.show()  # Exibir o gráfico
+
+```
+
+### Acurácia
+
+```{python econ6_28}
+# Calcular as métricas de acurácia
+y_true = dados_teste['ibc_sa']
+y_pred = fc_arima.predicted_mean
+
+mae = mean_absolute_error(y_true, y_pred)
+mse = mean_squared_error(y_true, y_pred)
+rmse = np.sqrt(mse)
+mape = mean_absolute_percentage_error(y_true, y_pred)
+
+# Exibir os resultados
+print(f'MAE: {mae:.4f}')
+print(f'MSE: {mse:.4f}')
+print(f'RMSE: {rmse:.4f}')
+print(f'MAPE: {mape:.4%}')
+
+```
+
+### Previsão Fora da Amostra
+
+```{python econ6_29}
+
+# 1. Reestimar o modelo ARIMA(1, 1, 1) com todos os dados disponíveis
+model_arima_full = ARIMA(ibc_br['ibc_sa'], order=(1, 1, 1), trend='t')
+fit_arima_full = model_arima_full.fit()
+
+# 2. Previsões fora da amostra para 12 passos à frente
+fc_arima_full = fit_arima_full.get_forecast(steps=12)
+fc_arima_full_index = pd.date_range(start=ibc_br.index[-1], periods=12, freq='ME')
+
+# 3. Criar DataFrame com previsões
+fc_arima_full_df = pd.DataFrame({
+    'date': pd.to_datetime(fc_arima_full_index),
+    'values': fc_arima_full.predicted_mean,
+    'lower_ci': fc_arima_full.conf_int().iloc[:, 0],  # Ajuste: pegar a 1ª coluna (lower)
+    'upper_ci': fc_arima_full.conf_int().iloc[:, 1],  # Ajuste: pegar a 2ª coluna (upper)
+    'tipo': 'Previsão'
+})
+
+# 4. Ajustar os dados observados (últimos 36 registros)
+dados_observados = ibc_br.iloc[-36:].copy()
+dados_observados = dados_observados.reset_index().rename(columns={'Date': 'date'})  # Ajuste aqui
+dados_observados['tipo'] = 'Observado'
+dados_observados = dados_observados.rename(columns={'ibc_sa': 'values'})
+
+# ⚠ Adicionar colunas de intervalo com NaN para dados observados
+dados_observados['lower_ci'] = np.nan
+dados_observados['upper_ci'] = np.nan
+
+#  Garantir que as colunas 'date' sejam datetime
+dados_observados['date'] = pd.to_datetime(dados_observados['date'])
+fc_arima_full_df['date'] = pd.to_datetime(fc_arima_full_df['date'])
+
+# 5. Combinar previsões e observados
+fc_real_full = pd.concat([dados_observados, fc_arima_full_df], ignore_index=True)
+
+# 6. Garantir que a coluna 'date' seja datetime
+fc_real_full['date'] = pd.to_datetime(fc_real_full['date'])
+
+print(dados_observados.head())
+
+# 7. Visualizar previsões vs. observado (últimos 36 registros)
+plot = (
+    p9.ggplot(fc_real_full, p9.aes(x='date', y='values', color='tipo')) +
+    p9.geom_line(size=1) +
+    p9.geom_ribbon(
+        p9.aes(ymin='lower_ci', ymax='upper_ci'),
+        data=fc_arima_full_df,
+        alpha=0.2,
+        fill='blue'
+    ) +
+    p9.labs(title="IBC-BR SA Observado vs. Previsão Fora da Amostra") +
+    p9.theme_minimal() +
+    p9.theme(
+        figure_size=(12, 6),
+        legend_position='right'
+    ) +
+    p9.scale_x_datetime(
+        breaks='6 months',
+        date_labels='%Y-%m'
+    )
+)
+
+plot.show()
+
+
+
+```
+
+# Subajuste (Underfitting) e Superajuste (Overfitting) em Modelos de Previsão
+
+O **subajuste** ocorre quando um modelo é muito simples para capturar os padrões presentes nos dados. Isso acontece quando o modelo tem poucos parâmetros ou não consegue representar adequadamente a complexidade da série temporal. Como resultado, ele apresenta um alto erro tanto nos dados de treinamento quanto nos dados de teste.
+
+I. Causas comuns do subajuste:
+
+a) Modelos lineares para dados não lineares.
+
+b) Poucos parâmetros ou variáveis explicativas.
+
+c) Suavização excessiva (como médias móveis simples em séries complexas).
+
+II. Como identificar o subajuste:
+
+i) Erros altos tanto no conjunto de treinamento quanto no conjunto de teste.
+
+ii) Resíduos apresentam padrões claros, indicando que o modelo não conseguiu capturar toda a informação.
+
+
+O **superajuste** ocorre quando um modelo é muito complexo e se ajusta excessivamente aos dados de treinamento, capturando até mesmo o ruído. Isso leva a um baixo erro no treinamento, mas um alto erro no teste, indicando que o modelo não generaliza bem para novos dados.
+
+III. Causas comuns do superajuste:
+
+a) Muitos parâmetros em relação ao tamanho dos dados.
+
+b) Inclusão de termos polinomiais ou sazonais desnecessários.
+
+c) Ajuste excessivo aos pontos extremos ou outliers.
+
+
+IV. Como identificar o superajuste:
+
+i) Erro muito baixo nos dados de treinamento, mas erro alto nos dados de teste.
+
+ii) Curvas de previsão que seguem muito de perto os dados históricos.
+
+V. Indicadores para Detectar Subajuste e Superajuste
+
+a) **Erro Médio Absoluto (MAE)**: Média das diferenças absolutas entre valores previstos e observados.
+
+b) **Erro Quadrático Médio (MSE)**: Média dos quadrados das diferenças entre valores previstos e observados.
+
+c) **Critério de Informação de Akaike (AIC)** e **Critério de Informação Bayesiano (BIC)**: Penalizam modelos complexos para evitar superajuste.
+
+### Exemplo
+
+```{python econ6_30}
+#import pandas as pd
+#from statsmodels.tsa.arima.model import ARIMA
+#from pmdarima import auto_arima
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+#import numpy as np
+#import matplotlib.pyplot as plt
+
+# Dividir os dados em treinamento (80%) e teste (20%)
+train_size = int(len(ibc_br) * 0.8)
+train, test = ibc_br.iloc[:train_size], ibc_br.iloc[train_size:]
+
+# Modelo com Underfitting
+
+model_simple = ARIMA(train['ibc_sa'], order=(0, 1, 0)).fit()
+forecast_simple = model_simple.get_forecast(steps=len(test))
+pred_simple = forecast_simple.predicted_mean
+
+# Erro no treinamento e teste
+mae_simple_train = mean_absolute_error(train['ibc_sa'], model_simple.fittedvalues)
+mae_simple_test = mean_absolute_error(test['ibc_sa'], pred_simple)
+
+print("Subajuste:")
+print(f"MAE Treinamento: {mae_simple_train:.2f}, MAE Teste: {mae_simple_test:.2f}")
+
+```
+
+```{python econ6_31}
+# Exemplo de Overfitting
+
+model_complex = ARIMA(train['ibc_sa'], order=(3, 1, 3)).fit()
+forecast_complex = model_complex.get_forecast(steps=len(test))
+pred_complex = forecast_complex.predicted_mean
+
+# Erro no treinamento e teste
+mae_complex_train = mean_absolute_error(train['ibc_sa'], model_complex.fittedvalues)
+mae_complex_test = mean_absolute_error(test['ibc_sa'], pred_complex)
+
+print("Superajuste:")
+print(f"MAE Treinamento: {mae_complex_train:.2f}, MAE Teste: {mae_complex_test:.2f}")
+
+```
+
+```{python econ6_32}
+# Visualização Gráfica
+# Previsões para o conjunto de treinamento
+train_pred_simple = model_simple.fittedvalues
+train_pred_complex = model_complex.fittedvalues
+
+# Previsões para o conjunto de teste (já calculadas)
+test_pred_simple = forecast_simple.predicted_mean
+test_pred_complex = forecast_complex.predicted_mean
+
+# Combinar previsões com dados observados
+full_pred_simple = np.concatenate([train_pred_simple, test_pred_simple])
+full_pred_complex = np.concatenate([train_pred_complex, test_pred_complex])
+
+# Criar gráfico com previsões para treinamento e teste
+plt.figure(figsize=(12, 6))
+
+# Dados observados
+plt.plot(ibc_br['ibc_sa'], color='black', label='Observado')
+
+# Previsões do modelo com subajuste
+plt.plot(ibc_br.index, full_pred_simple, color='orange', linestyle='--', label='Subajuste')
+
+# Previsões do modelo com superajuste
+plt.plot(ibc_br.index, full_pred_complex, color='red', linestyle='--', label='Superajuste')
+
+# Linha azul para o conjunto de treinamento
+plt.plot(train.index, train['ibc_sa'], color='blue', label='Treinamento')
+
+plt.title("Previsões: Subajuste vs. Superajuste")
+plt.legend()
+plt.show()
+
+
+```
+
+### Exemplo com os dados do IBC
+
+```{python econ6_33}
+# Dividir os dados em treinamento (80%) e teste (20%)
+train_size = int(len(ibc_br) * 0.8)
+train, test = ibc_br.iloc[:train_size], ibc_br.iloc[train_size:]
+
+# 1. Ajustar o modelo ARIMA(1, 1, 1) com tendência linear
+model_trend = ARIMA(train['ibc_sa'], order=(1, 1, 1), trend='t').fit()
+
+# 2. Previsões para o período de treino
+train_pred = model_trend.fittedvalues
+
+# 3. Previsões fora da amostra (teste)
+forecast = model_trend.get_forecast(steps=len(test))
+test_pred = forecast.predicted_mean
+
+# 4. Calcular MAE para treino e teste
+mae_train = mean_absolute_error(train['ibc_sa'], train_pred)
+mae_test = mean_absolute_error(test['ibc_sa'], test_pred)
+
+print("ARIMA(1, 1, 1) com Tendência:")
+print(f"MAE Treinamento: {mae_train:.2f}, MAE Teste: {mae_test:.2f}\n")
+
+# 5. Gráfico Comparativo
+plt.figure(figsize=(14, 7))
+
+# Dados observados
+plt.plot(ibc_br['ibc_sa'], color='black', label='Observado')
+
+# Previsões ARIMA(1, 1, 1) com Tendência
+plt.plot(train.index, train_pred, color='blue', linestyle='--', label='ARIMA(1,1,1) + Trend (Treino)')
+plt.plot(test.index, test_pred, color='blue', linestyle=':', label='ARIMA(1,1,1) + Trend (Teste)')
+
+# Dados de treinamento
+plt.plot(train.index, train['ibc_sa'], color='black', linestyle='-', label='Treinamento')
+
+# Faixa de Confiança
+conf_int = forecast.conf_int()
+plt.fill_between(test.index, conf_int.iloc[:, 0], conf_int.iloc[:, 1], color='blue', alpha=0.2)
+
+plt.title("Previsões: ARIMA(1, 1, 1) com Tendência vs. Observado")
+plt.xlabel("Data")
+plt.ylabel("IBC-SA")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+```
+
