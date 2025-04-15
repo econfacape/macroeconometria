@@ -1,0 +1,420 @@
+---
+title: "Aula 6A - Econometria de Séries Temporais"
+author: "João Ricardo F. de Lima"
+date: "today"
+editor: source
+lang: pt
+language: 
+  toc-title-document: '<a href="https://www.facape.br/" target="_blank"><img src="https://github.com/econfacape/macroeconometria/blob/main/logofacape.jpg?raw=true" alt="Logotipo Facape" width="150"></a>'
+format: 
+  html:
+    toc: true
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+    toc-location: left
+    code-fold: false
+    embed-resources: true
+    page-layout: full
+    fig-width: 10
+    fig-height: 8
+    fig-align: center
+    df-print: paged
+    fontsize: 13pt
+theme:
+  light: flatly
+execute:
+  echo: TRUE
+  message: false
+  warning: false
+---
+
+<br>
+
+# Metodologia de Box-Jenkins
+
+<br>
+
+Nos anos 70, Box e Jenkins utilizam da análise de "correlogramas" para identificar se uma série era I(0) ou não e para identificar as ordens "p" e "q" do modelo. Posteriormente, foram definidos testes estatísticos com tal finalidade, denominados de testes de raiz unitária, já vistos. Segundo a metodologia de Box-Jenkins, a análise de séries temporais tem por objetivo principal a realização de previsões.
+
+Esta metodologia permite fazer previsões com base nos valores contemporâneos e passados explorando a correlação temporal entre os valores realizados pela série. O primeiro passo da metodologia é a *Identificação*. Isto significa descobrir qual dos possíveis modelos ARIMA descreve o comportamento da série. Filosofia: "Deixem os dados falarem por si mesmos". Em outras palavras, é identificar os valores de "p", "d" e "q". Isto não pode ser feito apenas com a observação visual da série.
+
+O primeiro passo na identificação é avaliar se a série é estacionária. Se não for, a série deve ser diferenciada "d" vezes até se tornar estacionária.  Sendo a série original ou diferenciada, estacionária, o próximo passo é determinar se é gerada por um termo AR(p), MA(q) ou ARMA(p,q), além dos próprios valores de "p" e "q".
+
+De forma resumida e simplificada, o comportamento da FAC e FACp pode ser dado por:
+
+<br>
+
+<center>Tabela 1: Comportamento da FAC e FACp: </center>
+
+| \hline    Processo  | FAC          | FACP         |
+|:-------------------:|:------------:|:------------:|
+| \hline        AR(p) | Declinante   | Truncada k=p |
+| MA(q)               | Truncada k=p | Declinante   |
+| ARMA(p,q)           | Declinante   | Declinante   |
+
+<br>
+
+A **identificação** é a mais difícil das etapas da metodologia de Box e Jenkins. Normalmente mais de um modelo é escolhido para testar se é o gerador da série. Uma possibilidade é escolher o modelo com base nos critérios de Akaike (AIC) e Schwarz (BIC). 
+
+A segunda etapa é a **estimação** do modelo, sempre considerando o princípio da parcimônia.
+
+A terceira etapa é a **verificação**: verificar se o modelo é adequado. A forma mais comum é a análise dos resíduos. Na análise dos resíduos deve-se verificar se o comportamento é de um ruído branco. Para isto, pode-se fazer um correlograma dos resíduos.
+
+A quarta etapa é a **previsão**.
+
+<br>
+
+# Análise no Python
+
+## Baixar e fazer gráfico da série
+
+```{python econ6_16}
+from bcb import sgs
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+import statsmodels.tsa.api as tsa
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.stats.diagnostic import acorr_ljungbox
+from statsmodels.stats.stattools import jarque_bera
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.arima.model import ARIMA
+import matplotlib.pyplot as plt
+from plotnine import *
+import plotnine as p9
+import seaborn as sns
+from pmdarima import auto_arima
+from arch.unitroot import DFGLS
+import scipy.stats as stats
+from sklearn.metrics import mean_absolute_error, mean_squared_error, mean_absolute_percentage_error
+```
+
+```{python econ6_17}
+# Define a série com dicionário, mesmo que seja uma só
+series = {
+    'cambio': 3697
+}
+
+# Baixar a série do IBC-BR
+cambio = sgs.get(series, start='2004-01-01')
+
+# Redefinir índice para obter 'date' como uma coluna
+cambio = cambio.reset_index()
+
+# Exibir as primeiras linhas para conferir
+print(cambio.head())
+
+# Transformar a coluna 'Date' para datetime, se necessário
+cambio['Date'] = pd.to_datetime(cambio['Date'])
+
+# Plot com plotnine
+plot = (
+    p9.ggplot(cambio, p9.aes(x='Date', y='cambio')) +
+    p9.geom_line(color='blue', size=1) +
+    p9.labs(title='Taxa de câmbio - Livre - Dólar americano', x='Ano', y='cambio') +
+    p9.theme_minimal() +
+    p9.theme(
+      figure_size=(12, 6)
+    )
+
+)
+
+plot.show()
+
+```
+
+### Gráfico, FAC e FACp
+
+```{python econ6_18}
+#from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+
+cambio = cambio.dropna()
+
+# Converte a coluna 'Date' para datetime and configura como index
+cambio['Date'] = pd.to_datetime(cambio['Date'])
+cambio.set_index('Date', inplace=True)
+
+# Plota cambio, FAC, e FACpa
+fig, axes = plt.subplots(3, 1, figsize=(10, 12))
+
+# Plota cambio 
+cambio['cambio'].plot(ax=axes[0], title='Taxa de câmbio - Livre - Dólar americano', color='blue')
+axes[0].set_ylabel('Taxa de câmbio - Livre - Dólar americano')
+
+# Plota FAC
+plot_acf(cambio['cambio'], ax=axes[1], title='FAC (Função de Autocorrelação)')
+
+# Plota FACp
+plot_pacf(cambio['cambio'], ax=axes[2], title='FACp (Função de Autocorrelação Parcial)', method='ywm')
+
+plt.tight_layout()
+plt.show()
+```
+
+### Teste de Raiz Unitária DF-GLS
+
+```{python econ6_19}
+# Executa o teste DF-GLS com seleção automática de defasagens
+dfgls_test = DFGLS(cambio['cambio'], lags=None, trend='ct')  # 'ct' para constante + tendência. Apenas c = constante.
+
+# Exibe os resultados
+print(dfgls_test.summary())
+```
+
+### Primeira Diferença
+
+```{python econ6_20}
+# Criar uma coluna para a primeira diferença da série cambio
+cambio['cambio_diff'] = cambio['cambio'].diff()
+
+cambio = cambio.dropna()
+
+# Plota cambio, FAC, e FACpa
+fig, axes = plt.subplots(3, 1, figsize=(10, 12))
+
+# Plota cambio 
+cambio['cambio_diff'].plot(ax=axes[0], title='Taxa de câmbio - Livre - Dólar americano na Primeira Diferença', color='blue')
+axes[0].set_ylabel('cambio em 12 meses')
+
+# Plota FAC
+plot_acf(cambio['cambio_diff'], ax=axes[1], title='FAC (Função de Autocorrelação)')
+
+# Plota FACp
+plot_pacf(cambio['cambio_diff'], ax=axes[2], title='FACp (Função de Autocorrelação Parcial)', method='ywm')
+
+plt.tight_layout()
+plt.show()
+```
+
+```{python econ6_21}
+# Executa o teste DF-GLS com seleção automática de defasagens com a série na 1 diferença
+dfgls_test_diff = DFGLS(cambio['cambio_diff'], lags=None, trend='c')  # 'ct' para constante + tendência. Apenas c = constante.
+
+# Exibe os resultados
+print(dfgls_test_diff.summary())
+```
+
+### Estimação do Modelo ARIMA
+
+```{python econ6_22}
+#Estimação do modelo ARIMA automatico no Python
+#model = auto_arima(
+#    cambio['cambio'].dropna(),
+#    order=(0, 1, 1),
+#    seasonal_order=(0, 0, 1, 12),  # Sazonalidade semanal (12 meses)
+#    seasonal=True,
+#    trace=True
+#)
+#print(model.summary())
+```
+
+
+```{python}
+#Estimação do modelo ARIMA automatico no Python
+#Forma mais flexivel
+
+model = auto_arima(
+    cambio['cambio'].dropna(),
+    start_p=0, max_p=6,
+    start_q=0, max_q=6,
+    d=1,  # já que precisa de uma diferença
+    seasonal=True,
+    m=12,  
+    start_P=0, max_P=2,
+    start_Q=0, max_Q=2,
+    D=0,
+    trace=True,
+    stepwise=True
+)
+
+print(model.summary())
+```
+
+### Diagnóstico do Modelo
+
+```{python econ6_24}
+# Obter os resíduos do modelo ARIMA ajustado
+residuos = model.resid()
+
+# Criar subplots com layout ajustado para 3 gráficos (2 linhas, 1 coluna)
+fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+
+# Gráfico da série dos resíduos
+axes[0].plot(residuos, color='blue')
+axes[0].set_title('Resíduos do Modelo ARIMA')
+axes[0].set_ylabel('Resíduos')
+
+# Gráfico FAC dos resíduos
+plot_acf(residuos, ax=axes[1], title='FAC (Autocorrelação)')
+
+plt.tight_layout()
+plt.show()
+
+# Histograma dos resíduos em um gráfico separado
+plt.figure(figsize=(6, 4))
+sns.histplot(residuos, bins=20, kde=True, color='blue')
+plt.title('Histograma dos Resíduos')
+plt.show()
+
+
+```
+
+```{python econ6_25}
+# Teste de Ljung-Box para os resíduos
+# Obter os resíduos do modelo ajustado
+#residuos2 = pd.Series(model.fit())
+
+# Aplicar o teste de Ljung-Box nos resíduos
+ljung_box_test = acorr_ljungbox(residuos, lags=[10, 20, 24], return_df=True)
+
+# Exibir os resultados
+print("Teste de Ljung-Box nos Resíduos do auto_arima:")
+print(ljung_box_test)
+
+```
+
+```{python econ6_26}
+#Teste de Normalidade
+#from statsmodels.stats.stattools import jarque_bera
+
+jb_test = jarque_bera(residuos)
+print(f"Estatística Jarque-Bera: {jb_test[0]}, p-valor: {jb_test[1]}")
+
+```
+
+### Previsão 
+
+```{python econ6_27}
+
+# 1. Separação dos dados em treino e teste
+dados_treino = cambio.iloc[:-12]  # Exclui os últimos 12 registros (treino)
+dados_teste = cambio.iloc[-12:]    # Últimos 12 registros (teste)
+
+# 2. Estimação do modelo ARIMA(1, 1, 1) com constante
+model_arima_treino = ARIMA(dados_treino['cambio'], order=(0, 1, 1), trend='t')
+fit_arima_treino = model_arima_treino.fit()
+
+# 3. Previsões para 12 passos à frente
+fc_arima = fit_arima_treino.get_forecast(steps=12)
+fc_arima_index = pd.date_range(start=dados_teste.index[0], periods=12, freq='ME')
+
+# 4. DataFrame com previsões
+fc_arima_df = pd.DataFrame({
+    'date': pd.to_datetime(fc_arima_index),
+    'values': fc_arima.predicted_mean.astype(float),
+    'tipo': 'Previsão'  # Indicar que são previsões
+})
+
+# 5. Ajuste do DataFrame de teste
+dados_teste_df = dados_teste.copy().reset_index().rename(columns={'Date': 'date'})
+dados_teste_df['date'] = pd.to_datetime(dados_teste_df['date'])
+dados_teste_df['tipo'] = 'Observado'  # Indicar que são observações
+dados_teste_df = dados_teste_df.rename(columns={'cambio': 'values'})
+dados_teste_df['values'] = pd.to_numeric(dados_teste_df['values'], errors='coerce')
+
+# 6. União dos DataFrames (observado vs. previsão)
+fc_real = pd.concat([dados_teste_df, fc_arima_df])
+fc_real['date'] = pd.to_datetime(fc_real['date'])  # Garantir datetime
+
+# 7. Gráfico: Observado vs. Previsto
+plot = (
+    p9.ggplot(fc_real, p9.aes(x='date', y='values', color='tipo')) +
+    p9.geom_line(size=1.5) +
+    p9.labs(title="Taxa de Cambio Observado vs. Previsto") +
+    p9.theme_minimal() +
+    p9.theme(
+      figure_size=(12, 6)
+    )
+)
+plot.show()  # Exibir o gráfico
+
+```
+
+### Acurácia
+
+```{python econ6_28}
+# Calcular as métricas de acurácia
+y_true = dados_teste['cambio']
+y_pred = fc_arima.predicted_mean
+
+mae = mean_absolute_error(y_true, y_pred)
+mse = mean_squared_error(y_true, y_pred)
+rmse = np.sqrt(mse)
+mape = mean_absolute_percentage_error(y_true, y_pred)
+
+# Exibir os resultados
+print(f'MAE: {mae:.4f}')
+print(f'MSE: {mse:.4f}')
+print(f'RMSE: {rmse:.4f}')
+print(f'MAPE: {mape:.4%}')
+
+```
+
+### Previsão Fora da Amostra
+
+```{python econ6_29}
+
+# 1. Reestimar o modelo ARIMA(1, 1, 1) com todos os dados disponíveis
+model_arima_full = ARIMA(cambio['cambio'], order=(0, 1, 1), trend='t')
+fit_arima_full = model_arima_full.fit()
+
+# 2. Previsões fora da amostra para 12 passos à frente
+fc_arima_full = fit_arima_full.get_forecast(steps=12)
+fc_arima_full_index = pd.date_range(start=cambio.index[-1], periods=12, freq='ME')
+
+# 3. Criar DataFrame com previsões
+fc_arima_full_df = pd.DataFrame({
+    'date': pd.to_datetime(fc_arima_full_index),
+    'values': fc_arima_full.predicted_mean,
+    'lower_ci': fc_arima_full.conf_int().iloc[:, 0],  # Ajuste: pegar a 1ª coluna (lower)
+    'upper_ci': fc_arima_full.conf_int().iloc[:, 1],  # Ajuste: pegar a 2ª coluna (upper)
+    'tipo': 'Previsão'
+})
+
+# 4. Ajustar os dados observados (últimos 36 registros)
+dados_observados = cambio.iloc[-36:].copy()
+dados_observados = dados_observados.reset_index().rename(columns={'Date': 'date'})  # Ajuste aqui
+dados_observados['tipo'] = 'Observado'
+dados_observados = dados_observados.rename(columns={'cambio': 'values'})
+
+# ⚠ Adicionar colunas de intervalo com NaN para dados observados
+dados_observados['lower_ci'] = np.nan
+dados_observados['upper_ci'] = np.nan
+
+#  Garantir que as colunas 'date' sejam datetime
+dados_observados['date'] = pd.to_datetime(dados_observados['date'])
+fc_arima_full_df['date'] = pd.to_datetime(fc_arima_full_df['date'])
+
+# 5. Combinar previsões e observados
+fc_real_full = pd.concat([dados_observados, fc_arima_full_df], ignore_index=True)
+
+# 6. Garantir que a coluna 'date' seja datetime
+fc_real_full['date'] = pd.to_datetime(fc_real_full['date'])
+
+print(dados_observados.head())
+
+# 7. Visualizar previsões vs. observado (últimos 36 registros)
+plot = (
+    p9.ggplot(fc_real_full, p9.aes(x='date', y='values', color='tipo')) +
+    p9.geom_line(size=1) +
+    p9.geom_ribbon(
+        p9.aes(ymin='lower_ci', ymax='upper_ci'),
+        data=fc_arima_full_df,
+        alpha=0.2,
+        fill='blue'
+    ) +
+    p9.labs(title="Cambio Observado vs. Previsão Fora da Amostra") +
+    p9.theme_minimal() +
+    p9.theme(
+        figure_size=(12, 6),
+        legend_position='right'
+    ) +
+    p9.scale_x_datetime(
+        breaks='6 months',
+        date_labels='%Y-%m'
+    )
+)
+
+plot.show()
+```
