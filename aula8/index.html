@@ -4435,7 +4435,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Data de Publicação</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">3 de maio de 2025</p>
+      <p class="date">5 de maio de 2025</p>
     </div>
   </div>
   
@@ -5247,27 +5247,27 @@ Alternative Hypothesis: The process is weakly stationary.</code></pre>
 <span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Performing stepwise search to minimize aic
- ARIMA(2,1,2)(0,0,0)[0] intercept   : AIC=545.890, Time=2.38 sec
- ARIMA(0,1,0)(0,0,0)[0] intercept   : AIC=571.984, Time=0.40 sec
- ARIMA(1,1,0)(0,0,0)[0] intercept   : AIC=552.538, Time=0.21 sec
- ARIMA(0,1,1)(0,0,0)[0] intercept   : AIC=554.983, Time=0.28 sec
+ ARIMA(2,1,2)(0,0,0)[0] intercept   : AIC=545.890, Time=9.67 sec
+ ARIMA(0,1,0)(0,0,0)[0] intercept   : AIC=571.984, Time=0.33 sec
+ ARIMA(1,1,0)(0,0,0)[0] intercept   : AIC=552.538, Time=0.41 sec
+ ARIMA(0,1,1)(0,0,0)[0] intercept   : AIC=554.983, Time=0.69 sec
  ARIMA(0,1,0)(0,0,0)[0]             : AIC=569.986, Time=0.12 sec
- ARIMA(1,1,2)(0,0,0)[0] intercept   : AIC=552.832, Time=0.78 sec
- ARIMA(2,1,1)(0,0,0)[0] intercept   : AIC=552.862, Time=1.58 sec
- ARIMA(3,1,2)(0,0,0)[0] intercept   : AIC=546.077, Time=1.20 sec
- ARIMA(2,1,3)(0,0,0)[0] intercept   : AIC=545.839, Time=1.19 sec
- ARIMA(1,1,3)(0,0,0)[0] intercept   : AIC=544.868, Time=1.31 sec
- ARIMA(0,1,3)(0,0,0)[0] intercept   : AIC=549.474, Time=0.48 sec
- ARIMA(1,1,4)(0,0,0)[0] intercept   : AIC=531.071, Time=3.98 sec
- ARIMA(0,1,4)(0,0,0)[0] intercept   : AIC=550.085, Time=0.57 sec
- ARIMA(2,1,4)(0,0,0)[0] intercept   : AIC=inf, Time=3.13 sec
- ARIMA(1,1,5)(0,0,0)[0] intercept   : AIC=551.390, Time=2.43 sec
- ARIMA(0,1,5)(0,0,0)[0] intercept   : AIC=549.411, Time=0.73 sec
- ARIMA(2,1,5)(0,0,0)[0] intercept   : AIC=534.913, Time=4.52 sec
- ARIMA(1,1,4)(0,0,0)[0]             : AIC=inf, Time=1.39 sec
+ ARIMA(1,1,2)(0,0,0)[0] intercept   : AIC=552.832, Time=2.53 sec
+ ARIMA(2,1,1)(0,0,0)[0] intercept   : AIC=552.862, Time=4.10 sec
+ ARIMA(3,1,2)(0,0,0)[0] intercept   : AIC=546.077, Time=4.26 sec
+ ARIMA(2,1,3)(0,0,0)[0] intercept   : AIC=545.839, Time=4.83 sec
+ ARIMA(1,1,3)(0,0,0)[0] intercept   : AIC=544.868, Time=3.66 sec
+ ARIMA(0,1,3)(0,0,0)[0] intercept   : AIC=549.474, Time=0.89 sec
+ ARIMA(1,1,4)(0,0,0)[0] intercept   : AIC=531.071, Time=7.57 sec
+ ARIMA(0,1,4)(0,0,0)[0] intercept   : AIC=550.085, Time=1.16 sec
+ ARIMA(2,1,4)(0,0,0)[0] intercept   : AIC=inf, Time=11.71 sec
+ ARIMA(1,1,5)(0,0,0)[0] intercept   : AIC=551.390, Time=8.08 sec
+ ARIMA(0,1,5)(0,0,0)[0] intercept   : AIC=549.411, Time=1.05 sec
+ ARIMA(2,1,5)(0,0,0)[0] intercept   : AIC=534.913, Time=8.37 sec
+ ARIMA(1,1,4)(0,0,0)[0]             : AIC=inf, Time=4.57 sec
 
 Best model:  ARIMA(1,1,4)(0,0,0)[0] intercept
-Total fit time: 26.725 seconds</code></pre>
+Total fit time: 74.166 seconds</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(modelo_arima.summary())</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -5275,8 +5275,8 @@ Total fit time: 26.725 seconds</code></pre>
 ==============================================================================
 Dep. Variable:                      y   No. Observations:                  694
 Model:               SARIMAX(1, 1, 4)   Log Likelihood                -258.536
-Date:                Sáb, 03 Mai 2025   AIC                            531.071
-Time:                        16:49:56   BIC                            562.858
+Date:                Seg, 05 Mai 2025   AIC                            531.071
+Time:                        08:15:18   BIC                            562.858
 Sample:                             0   HQIC                           543.365
                                 - 694                                         
 Covariance Type:                  opg                                         
@@ -5320,8 +5320,8 @@ Warnings:
 ==============================================================================
 Dep. Variable:                      y   No. Observations:                  694
 Model:               SARIMAX(1, 1, 4)   Log Likelihood                -252.588
-Date:                Sáb, 03 Mai 2025   AIC                            523.176
-Time:                        16:50:00   BIC                            564.045
+Date:                Seg, 05 Mai 2025   AIC                            523.176
+Time:                        08:15:29   BIC                            564.045
 Sample:                             0   HQIC                           538.982
                                 - 694                                         
 Covariance Type:                  opg                                         
@@ -5350,54 +5350,129 @@ Warnings:
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Estimar modelo SARIMA com diferenciação sazonal (sazonalidade semanal: m = 52)</span></span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="co">#modelo_sarima = auto_arima(</span></span>
-<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="co">#    y,</span></span>
-<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a><span class="co">#    seasonal=True,</span></span>
-<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a><span class="co">#    m=52,  # periodicidade semanal (52 semanas por ano)</span></span>
-<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a><span class="co">#    stepwise=True,</span></span>
-<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a><span class="co">#    suppress_warnings=True,</span></span>
-<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a><span class="co">#    information_criterion=&#39;aic&#39;,</span></span>
-<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a><span class="co">#    trace=True</span></span>
-<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a><span class="co">#)</span></span>
-<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Mostrar o resumo</span></span>
-<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a><span class="co">#print(modelo_sarima.summary())</span></span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>modelo_sarima <span class="op">=</span> auto_arima(</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>    y,</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>    seasonal<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>    m<span class="op">=</span><span class="dv">52</span>,  <span class="co"># periodicidade semanal (52 semanas por ano)</span></span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>    stepwise<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>    suppress_warnings<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>    information_criterion<span class="op">=</span><span class="st">&#39;aic&#39;</span>,</span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>    trace<span class="op">=</span><span class="va">True</span></span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Performing stepwise search to minimize aic
+ ARIMA(2,1,2)(1,0,1)[52] intercept   : AIC=inf, Time=74.48 sec
+ ARIMA(0,1,0)(0,0,0)[52] intercept   : AIC=571.984, Time=0.33 sec
+ ARIMA(1,1,0)(1,0,0)[52] intercept   : AIC=554.393, Time=22.91 sec
+ ARIMA(0,1,1)(0,0,1)[52] intercept   : AIC=556.894, Time=10.69 sec
+ ARIMA(0,1,0)(0,0,0)[52]             : AIC=569.986, Time=0.12 sec
+ ARIMA(1,1,0)(0,0,0)[52] intercept   : AIC=552.538, Time=0.20 sec
+ ARIMA(1,1,0)(0,0,1)[52] intercept   : AIC=554.399, Time=7.96 sec
+ ARIMA(1,1,0)(1,0,1)[52] intercept   : AIC=inf, Time=59.18 sec
+ ARIMA(2,1,0)(0,0,0)[52] intercept   : AIC=551.790, Time=0.36 sec
+ ARIMA(2,1,0)(1,0,0)[52] intercept   : AIC=553.506, Time=7.85 sec
+ ARIMA(2,1,0)(0,0,1)[52] intercept   : AIC=553.516, Time=5.67 sec
+ ARIMA(2,1,0)(1,0,1)[52] intercept   : AIC=inf, Time=47.63 sec
+ ARIMA(3,1,0)(0,0,0)[52] intercept   : AIC=551.016, Time=0.24 sec
+ ARIMA(3,1,0)(1,0,0)[52] intercept   : AIC=552.601, Time=8.89 sec
+ ARIMA(3,1,0)(0,0,1)[52] intercept   : AIC=552.612, Time=9.27 sec
+ ARIMA(3,1,0)(1,0,1)[52] intercept   : AIC=inf, Time=40.99 sec
+ ARIMA(4,1,0)(0,0,0)[52] intercept   : AIC=549.734, Time=0.65 sec
+ ARIMA(4,1,0)(1,0,0)[52] intercept   : AIC=551.092, Time=13.80 sec
+ ARIMA(4,1,0)(0,0,1)[52] intercept   : AIC=551.116, Time=13.91 sec
+ ARIMA(4,1,0)(1,0,1)[52] intercept   : AIC=inf, Time=51.42 sec
+ ARIMA(5,1,0)(0,0,0)[52] intercept   : AIC=550.477, Time=0.95 sec
+ ARIMA(4,1,1)(0,0,0)[52] intercept   : AIC=550.766, Time=1.29 sec
+ ARIMA(3,1,1)(0,0,0)[52] intercept   : AIC=544.262, Time=1.34 sec
+ ARIMA(3,1,1)(1,0,0)[52] intercept   : AIC=545.694, Time=25.07 sec
+ ARIMA(3,1,1)(0,0,1)[52] intercept   : AIC=545.717, Time=39.30 sec
+ ARIMA(3,1,1)(1,0,1)[52] intercept   : AIC=inf, Time=46.12 sec
+ ARIMA(2,1,1)(0,0,0)[52] intercept   : AIC=552.862, Time=0.75 sec
+ ARIMA(3,1,2)(0,0,0)[52] intercept   : AIC=546.077, Time=1.21 sec
+ ARIMA(2,1,2)(0,0,0)[52] intercept   : AIC=545.890, Time=1.06 sec
+ ARIMA(4,1,2)(0,0,0)[52] intercept   : AIC=inf, Time=2.22 sec
+ ARIMA(3,1,1)(0,0,0)[52]             : AIC=542.263, Time=0.45 sec
+ ARIMA(3,1,1)(1,0,0)[52]             : AIC=543.695, Time=7.05 sec
+ ARIMA(3,1,1)(0,0,1)[52]             : AIC=543.718, Time=8.64 sec
+ ARIMA(3,1,1)(1,0,1)[52]             : AIC=inf, Time=22.20 sec
+ ARIMA(2,1,1)(0,0,0)[52]             : AIC=550.863, Time=0.24 sec
+ ARIMA(3,1,0)(0,0,0)[52]             : AIC=549.016, Time=0.13 sec
+ ARIMA(4,1,1)(0,0,0)[52]             : AIC=548.767, Time=0.36 sec
+ ARIMA(3,1,2)(0,0,0)[52]             : AIC=544.078, Time=0.60 sec
+ ARIMA(2,1,0)(0,0,0)[52]             : AIC=549.790, Time=0.07 sec
+ ARIMA(2,1,2)(0,0,0)[52]             : AIC=543.890, Time=0.61 sec
+ ARIMA(4,1,0)(0,0,0)[52]             : AIC=547.735, Time=0.19 sec
+ ARIMA(4,1,2)(0,0,0)[52]             : AIC=inf, Time=1.46 sec
+
+Best model:  ARIMA(3,1,1)(0,0,0)[52]          
+Total fit time: 538.136 seconds</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Mostrar o resumo</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(modelo_sarima.summary())</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                               SARIMAX Results                                
+==============================================================================
+Dep. Variable:                      y   No. Observations:                  694
+Model:               SARIMAX(3, 1, 1)   Log Likelihood                -266.131
+Date:                Seg, 05 Mai 2025   AIC                            542.263
+Time:                        08:24:29   BIC                            564.968
+Sample:                             0   HQIC                           551.044
+                                - 694                                         
+Covariance Type:                  opg                                         
+==============================================================================
+                 coef    std err          z      P&gt;|z|      [0.025      0.975]
+------------------------------------------------------------------------------
+ar.L1         -0.7702      0.041    -18.732      0.000      -0.851      -0.690
+ar.L2          0.2078      0.039      5.355      0.000       0.132       0.284
+ar.L3          0.1026      0.033      3.144      0.002       0.039       0.166
+ma.L1          0.9467      0.035     27.364      0.000       0.879       1.015
+sigma2         0.1262      0.005     27.472      0.000       0.117       0.135
+===================================================================================
+Ljung-Box (L1) (Q):                   0.00   Jarque-Bera (JB):               195.02
+Prob(Q):                              0.96   Prob(JB):                         0.00
+Heteroskedasticity (H):               0.45   Skew:                            -0.15
+Prob(H) (two-sided):                  0.00   Kurtosis:                         5.58
+===================================================================================
+
+Warnings:
+[1] Covariance matrix calculated using the outer product of gradients (complex-step).</code></pre>
+</div>
 </div>
 </section>
 </section>
 <section id="previsão-16-semanas-a-frente-1" class="level1">
 <h1>Previsão 16 semanas a frente</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pmdarima.arima <span class="im">import</span> ARIMA</span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pmdarima.preprocessing <span class="im">import</span> FourierFeaturizer</span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Divide series</span></span>
-<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>n_test <span class="op">=</span> <span class="dv">16</span></span>
-<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>y_train, y_test <span class="op">=</span> y[:<span class="op">-</span>n_test], y[<span class="op">-</span>n_test:]</span>
-<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>index_train, index_test <span class="op">=</span> index[:<span class="op">-</span>n_test], index[<span class="op">-</span>n_test:]</span>
-<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Fourier features</span></span>
-<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>fourier <span class="op">=</span> FourierFeaturizer(m<span class="op">=</span><span class="dv">52</span>, k<span class="op">=</span><span class="dv">1</span>)</span>
-<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a>_, X_full <span class="op">=</span> fourier.fit_transform(index)</span>
-<span id="cb42-12"><a href="#cb42-12" aria-hidden="true" tabindex="-1"></a>X_train <span class="op">=</span> X_full[:<span class="op">-</span>n_test].values.astype(<span class="bu">float</span>)</span>
-<span id="cb42-13"><a href="#cb42-13" aria-hidden="true" tabindex="-1"></a>X_test <span class="op">=</span> X_full[<span class="op">-</span>n_test:].values.astype(<span class="bu">float</span>)</span>
-<span id="cb42-14"><a href="#cb42-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb42-15"><a href="#cb42-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb42-16"><a href="#cb42-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit and predict</span></span>
-<span id="cb42-17"><a href="#cb42-17" aria-hidden="true" tabindex="-1"></a>modelo_pmd <span class="op">=</span> ARIMA(order<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">4</span>), seasonal<span class="op">=</span><span class="va">False</span>).fit(y_train, X_train)</span>
-<span id="cb42-18"><a href="#cb42-18" aria-hidden="true" tabindex="-1"></a>modelo_pmd.fit(y_train)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pmdarima.arima <span class="im">import</span> ARIMA</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pmdarima.preprocessing <span class="im">import</span> FourierFeaturizer</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Divide series</span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>n_test <span class="op">=</span> <span class="dv">16</span></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>y_train, y_test <span class="op">=</span> y[:<span class="op">-</span>n_test], y[<span class="op">-</span>n_test:]</span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>index_train, index_test <span class="op">=</span> index[:<span class="op">-</span>n_test], index[<span class="op">-</span>n_test:]</span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Fourier features</span></span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>fourier <span class="op">=</span> FourierFeaturizer(m<span class="op">=</span><span class="dv">52</span>, k<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>_, X_full <span class="op">=</span> fourier.fit_transform(index)</span>
+<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a>X_train <span class="op">=</span> X_full[:<span class="op">-</span>n_test].values.astype(<span class="bu">float</span>)</span>
+<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a>X_test <span class="op">=</span> X_full[<span class="op">-</span>n_test:].values.astype(<span class="bu">float</span>)</span>
+<span id="cb45-14"><a href="#cb45-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-15"><a href="#cb45-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-16"><a href="#cb45-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit and predict</span></span>
+<span id="cb45-17"><a href="#cb45-17" aria-hidden="true" tabindex="-1"></a>modelo_pmd <span class="op">=</span> ARIMA(order<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">4</span>), seasonal<span class="op">=</span><span class="va">False</span>).fit(y_train, X_train)</span>
+<span id="cb45-18"><a href="#cb45-18" aria-hidden="true" tabindex="-1"></a>modelo_pmd.fit(y_train)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>ARIMA(order=(1, 1, 4))</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Mostrar resumo</span></span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(modelo_pmd.summary())</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Mostrar resumo</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(modelo_pmd.summary())</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                               SARIMAX Results                                
 ==============================================================================
 Dep. Variable:                      y   No. Observations:                  678
 Model:               SARIMAX(1, 1, 4)   Log Likelihood                -256.978
-Date:                Sáb, 03 Mai 2025   AIC                            527.957
-Time:                        16:50:09   BIC                            559.580
+Date:                Seg, 05 Mai 2025   AIC                            527.957
+Time:                        08:24:33   BIC                            559.580
 Sample:                             0   HQIC                           540.200
                                 - 678                                         
 Covariance Type:                  opg                                         
@@ -5421,16 +5496,16 @@ Prob(H) (two-sided):                  0.00   Kurtosis:                         5
 Warnings:
 [1] Covariance matrix calculated using the outer product of gradients (complex-step).</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>forecast <span class="op">=</span> modelo_pmd.predict(n_periods<span class="op">=</span>n_test, exogenous<span class="op">=</span>X_test)</span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Exibir</span></span>
-<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(forecast)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>forecast <span class="op">=</span> modelo_pmd.predict(n_periods<span class="op">=</span>n_test, exogenous<span class="op">=</span>X_test)</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Exibir</span></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(forecast)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1.63636206 1.74685956 1.83800592 1.87613907 1.91027106 1.94080475
  1.96810246 1.99249002 2.01426045 2.03367725 2.05097743 2.06637409
  2.0800589  2.09220423 2.10296509 2.11248087]</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(y_test)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(y_test)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1.73856741 1.51747791 0.8441599  0.96515373 1.20395465 1.56215603
  1.77110684 2.16       2.35       2.49       2.42       2.54
@@ -5438,41 +5513,41 @@ Warnings:
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Criar um DataFrame com os resultados</span></span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>df_plot <span class="op">=</span> pd.DataFrame({</span>
-<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;date&#39;</span>: index,                      <span class="co"># índice completo</span></span>
-<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;real&#39;</span>: y,                          <span class="co"># série original completa</span></span>
-<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;tipo&#39;</span>: [<span class="st">&#39;treino&#39;</span>] <span class="op">*</span> <span class="bu">len</span>(y)        <span class="co"># inicializa como treino</span></span>
-<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Atualiza os últimos 16 valores como teste</span></span>
-<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>df_plot.loc[<span class="bu">len</span>(y) <span class="op">-</span> <span class="dv">16</span>:, <span class="st">&#39;tipo&#39;</span>] <span class="op">=</span> <span class="st">&#39;teste&#39;</span></span>
-<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-11"><a href="#cb50-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Adiciona a previsão</span></span>
-<span id="cb50-12"><a href="#cb50-12" aria-hidden="true" tabindex="-1"></a>df_forecast <span class="op">=</span> pd.DataFrame({</span>
-<span id="cb50-13"><a href="#cb50-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;date&#39;</span>: index[<span class="op">-</span><span class="dv">16</span>:],</span>
-<span id="cb50-14"><a href="#cb50-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;real&#39;</span>: forecast,</span>
-<span id="cb50-15"><a href="#cb50-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;tipo&#39;</span>: [<span class="st">&#39;previsão&#39;</span>] <span class="op">*</span> <span class="dv">16</span></span>
-<span id="cb50-16"><a href="#cb50-16" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb50-17"><a href="#cb50-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-18"><a href="#cb50-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Junta tudo</span></span>
-<span id="cb50-19"><a href="#cb50-19" aria-hidden="true" tabindex="-1"></a>df_final <span class="op">=</span> pd.concat([df_plot, df_forecast], ignore_index<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb50-20"><a href="#cb50-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-21"><a href="#cb50-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Gráfico com plotnine</span></span>
-<span id="cb50-22"><a href="#cb50-22" aria-hidden="true" tabindex="-1"></a>grafico <span class="op">=</span> (</span>
-<span id="cb50-23"><a href="#cb50-23" aria-hidden="true" tabindex="-1"></a>    p9.ggplot(df_final, p9.aes(x<span class="op">=</span><span class="st">&#39;date&#39;</span>, y<span class="op">=</span><span class="st">&#39;real&#39;</span>, color<span class="op">=</span><span class="st">&#39;tipo&#39;</span>)) <span class="op">+</span></span>
-<span id="cb50-24"><a href="#cb50-24" aria-hidden="true" tabindex="-1"></a>    p9.geom_line(size<span class="op">=</span><span class="fl">1.2</span>) <span class="op">+</span></span>
-<span id="cb50-25"><a href="#cb50-25" aria-hidden="true" tabindex="-1"></a>    p9.scale_color_manual(values<span class="op">=</span>{<span class="st">&#39;treino&#39;</span>: <span class="st">&#39;blue&#39;</span>, <span class="st">&#39;teste&#39;</span>: <span class="st">&#39;black&#39;</span>, <span class="st">&#39;previsão&#39;</span>: <span class="st">&#39;red&#39;</span>}) <span class="op">+</span></span>
-<span id="cb50-26"><a href="#cb50-26" aria-hidden="true" tabindex="-1"></a>    p9.labs(title<span class="op">=</span><span class="st">&#39;Série Real vs Previsão com Termos de Fourier&#39;</span>,</span>
-<span id="cb50-27"><a href="#cb50-27" aria-hidden="true" tabindex="-1"></a>         x<span class="op">=</span><span class="st">&#39;Data&#39;</span>, y<span class="op">=</span><span class="st">&#39;Preço&#39;</span>, color<span class="op">=</span><span class="st">&#39;Série&#39;</span>) <span class="op">+</span></span>
-<span id="cb50-28"><a href="#cb50-28" aria-hidden="true" tabindex="-1"></a>    p9.theme_minimal() <span class="op">+</span></span>
-<span id="cb50-29"><a href="#cb50-29" aria-hidden="true" tabindex="-1"></a>    p9.theme(axis_text_x<span class="op">=</span>p9.element_text(rotation<span class="op">=</span><span class="dv">45</span>, hjust<span class="op">=</span><span class="dv">1</span>))<span class="op">+</span></span>
-<span id="cb50-30"><a href="#cb50-30" aria-hidden="true" tabindex="-1"></a>    p9.theme(</span>
-<span id="cb50-31"><a href="#cb50-31" aria-hidden="true" tabindex="-1"></a>        figure_size<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">8</span>)</span>
-<span id="cb50-32"><a href="#cb50-32" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb50-33"><a href="#cb50-33" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb50-34"><a href="#cb50-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-35"><a href="#cb50-35" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(grafico)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Criar um DataFrame com os resultados</span></span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>df_plot <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;date&#39;</span>: index,                      <span class="co"># índice completo</span></span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;real&#39;</span>: y,                          <span class="co"># série original completa</span></span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;tipo&#39;</span>: [<span class="st">&#39;treino&#39;</span>] <span class="op">*</span> <span class="bu">len</span>(y)        <span class="co"># inicializa como treino</span></span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Atualiza os últimos 16 valores como teste</span></span>
+<span id="cb53-9"><a href="#cb53-9" aria-hidden="true" tabindex="-1"></a>df_plot.loc[<span class="bu">len</span>(y) <span class="op">-</span> <span class="dv">16</span>:, <span class="st">&#39;tipo&#39;</span>] <span class="op">=</span> <span class="st">&#39;teste&#39;</span></span>
+<span id="cb53-10"><a href="#cb53-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-11"><a href="#cb53-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Adiciona a previsão</span></span>
+<span id="cb53-12"><a href="#cb53-12" aria-hidden="true" tabindex="-1"></a>df_forecast <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb53-13"><a href="#cb53-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;date&#39;</span>: index[<span class="op">-</span><span class="dv">16</span>:],</span>
+<span id="cb53-14"><a href="#cb53-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;real&#39;</span>: forecast,</span>
+<span id="cb53-15"><a href="#cb53-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;tipo&#39;</span>: [<span class="st">&#39;previsão&#39;</span>] <span class="op">*</span> <span class="dv">16</span></span>
+<span id="cb53-16"><a href="#cb53-16" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb53-17"><a href="#cb53-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-18"><a href="#cb53-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Junta tudo</span></span>
+<span id="cb53-19"><a href="#cb53-19" aria-hidden="true" tabindex="-1"></a>df_final <span class="op">=</span> pd.concat([df_plot, df_forecast], ignore_index<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb53-20"><a href="#cb53-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-21"><a href="#cb53-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Gráfico com plotnine</span></span>
+<span id="cb53-22"><a href="#cb53-22" aria-hidden="true" tabindex="-1"></a>grafico <span class="op">=</span> (</span>
+<span id="cb53-23"><a href="#cb53-23" aria-hidden="true" tabindex="-1"></a>    p9.ggplot(df_final, p9.aes(x<span class="op">=</span><span class="st">&#39;date&#39;</span>, y<span class="op">=</span><span class="st">&#39;real&#39;</span>, color<span class="op">=</span><span class="st">&#39;tipo&#39;</span>)) <span class="op">+</span></span>
+<span id="cb53-24"><a href="#cb53-24" aria-hidden="true" tabindex="-1"></a>    p9.geom_line(size<span class="op">=</span><span class="fl">1.2</span>) <span class="op">+</span></span>
+<span id="cb53-25"><a href="#cb53-25" aria-hidden="true" tabindex="-1"></a>    p9.scale_color_manual(values<span class="op">=</span>{<span class="st">&#39;treino&#39;</span>: <span class="st">&#39;blue&#39;</span>, <span class="st">&#39;teste&#39;</span>: <span class="st">&#39;black&#39;</span>, <span class="st">&#39;previsão&#39;</span>: <span class="st">&#39;red&#39;</span>}) <span class="op">+</span></span>
+<span id="cb53-26"><a href="#cb53-26" aria-hidden="true" tabindex="-1"></a>    p9.labs(title<span class="op">=</span><span class="st">&#39;Série Real vs Previsão com Termos de Fourier&#39;</span>,</span>
+<span id="cb53-27"><a href="#cb53-27" aria-hidden="true" tabindex="-1"></a>         x<span class="op">=</span><span class="st">&#39;Data&#39;</span>, y<span class="op">=</span><span class="st">&#39;Preço&#39;</span>, color<span class="op">=</span><span class="st">&#39;Série&#39;</span>) <span class="op">+</span></span>
+<span id="cb53-28"><a href="#cb53-28" aria-hidden="true" tabindex="-1"></a>    p9.theme_minimal() <span class="op">+</span></span>
+<span id="cb53-29"><a href="#cb53-29" aria-hidden="true" tabindex="-1"></a>    p9.theme(axis_text_x<span class="op">=</span>p9.element_text(rotation<span class="op">=</span><span class="dv">45</span>, hjust<span class="op">=</span><span class="dv">1</span>))<span class="op">+</span></span>
+<span id="cb53-30"><a href="#cb53-30" aria-hidden="true" tabindex="-1"></a>    p9.theme(</span>
+<span id="cb53-31"><a href="#cb53-31" aria-hidden="true" tabindex="-1"></a>        figure_size<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">8</span>)</span>
+<span id="cb53-32"><a href="#cb53-32" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb53-33"><a href="#cb53-33" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb53-34"><a href="#cb53-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-35"><a href="#cb53-35" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(grafico)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">

@@ -569,18 +569,18 @@ print(modelo_fourier.summary())
 
 ```{python econ8_20, warning=FALSE, message=FALSE}
 # Estimar modelo SARIMA com diferenciação sazonal (sazonalidade semanal: m = 52)
-#modelo_sarima = auto_arima(
-#    y,
-#    seasonal=True,
-#    m=52,  # periodicidade semanal (52 semanas por ano)
-#    stepwise=True,
-#    suppress_warnings=True,
-#    information_criterion='aic',
-#    trace=True
-#)
+modelo_sarima = auto_arima(
+    y,
+    seasonal=True,
+    m=52,  # periodicidade semanal (52 semanas por ano)
+    stepwise=True,
+    suppress_warnings=True,
+    information_criterion='aic',
+    trace=True
+)
 
 # Mostrar o resumo
-#print(modelo_sarima.summary())
+print(modelo_sarima.summary())
 ```
 
 
