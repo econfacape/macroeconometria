@@ -1,0 +1,309 @@
+---
+title: "Aula 9 - Econometria de Séries Temporais"
+author: "João Ricardo F. de Lima"
+date: "today"
+editor: source
+lang: pt
+language: 
+  toc-title-document: '<a href="https://www.facape.br/" target="_blank"><img src="https://github.com/econfacape/macroeconometria/blob/main/logofacape.jpg?raw=true" alt="Logotipo Facape" width="150"></a>'
+format: 
+  html:
+    toc: true
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+    toc-location: left
+    code-fold: false
+    embed-resources: true
+    page-layout: full
+    fig-width: 12
+    fig-height: 6
+    fig-align: center
+    df-print: paged
+    fontsize: 13pt
+theme:
+  light: flatly
+execute:
+  echo: TRUE
+  message: false
+  warning: false
+  cache: false
+jupyter: python3
+---
+
+## Introdução
+
+O objetivo é estimar modelos de previsão de manga palmer, ao produtor do Vale do São Francisco e verificar qual deles possui a maior eficácia. 
+
+```{python}
+# Bibliotecas
+import pandas as pd
+import plotnine as p9
+from great_tables import GT, md, html, style, loc
+import pmdarima as pmd
+import xgboost as xgb
+#from nixtla import NixtlaClient
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+import numpy as np
+
+# Load mango price dataset and drop specified columns
+df = (
+    pd.read_csv('dados/dados_manga_palmer_semana.csv', sep=';', decimal='.')
+    .drop(columns=['produto', 'regiao', 'ano', 'semana'])
+)
+
+# Create the date range from 2012-01-07 to today
+date_range = pd.date_range(start='2012-01-01', end=pd.Timestamp.today(), freq='W-SAT')
+
+# Remove the specific dates (53rd weeks)
+dates_to_remove = [pd.Timestamp('2016-12-31'), pd.Timestamp('2022-12-31')]
+date_range = date_range[~date_range.isin(dates_to_remove)]
+
+# Assign the date range as a new column
+df['date'] = date_range[:len(df)]
+# Assign the date range as a new column
+df['date2'] = date_range[:len(df)]
+
+# Set the date as the index
+df = df.set_index('date')
+
+# Load igpdi dataset
+igpdi = (
+    pd.read_csv('dados/igpdi.csv', sep=';', decimal='.')
+    .assign(date=df.index)
+    .drop(columns=['ano', 'semana'])
+    .set_index('date')
+)
+
+# Merge DataFrames
+tabela = df.join(igpdi, how='inner')
+
+# Deflacionar a série com data base = último mês observado
+indice_data_base = tabela.query("date == date.max()").igpdi.values[0]
+tabela = tabela.assign(real = lambda x: (indice_data_base / x.igpdi) * x.preco)
+
+# Display the merged DataFrame
+print(tabela)
+
+```
+
+```{python}
+# Visualização de dados
+(
+  p9.ggplot(tabela) +
+  p9.aes(x = "date2", y = "real") +
+  p9.geom_line() +
+  p9.scale_x_date(date_breaks = "2 year", date_labels = "%Y") +
+  p9.labs(
+    title = "Evolução dos Preços de Manga Palmer: 2012 a 2025",
+    subtitle = "Ao produtor do Vale do São Francisco",
+    x = "",
+    y = "Preços Palmer",
+    caption = "Dados: CEPEA reprocessados pelo Observatório de Mercado da Embrapa"
+    )
+)
+```
+
+## Previsão com modelos econométricos
+
+As previsões geradas pelo modelo econométrico ARIMA podem ser conferidas abaixo:
+
+```{python}
+# Dados de Clima
+clima =pd.read_csv('dados/df_climate_weekly.csv', sep=';', decimal='.')
+
+# Convert 'date' column to datetime format if not already
+clima['date'] = pd.to_datetime(clima['date'], dayfirst=True)
+
+# Extract the year from the 'date' column
+clima['year'] = clima['date'].dt.year
+
+# Group by 'year' and count the number of observations
+observations_per_year = clima.groupby('year').size().reset_index(name='count')
+
+# Display the result
+#print(observations_per_year)
+
+# Extrair o ano do índice de datas
+tabela['ano'] = tabela.index.year
+
+# Contar número de observações (semanas) por ano
+semanas_por_ano = tabela.groupby('ano').size()
+#print(semanas_por_ano)
+
+# Junção dos dados
+
+# 1. Remover a coluna 'date'
+clima = clima.drop(columns=['date'])
+
+# 2. Atribuir o índice do DataFrame 'tabela' ao DataFrame 'clima'
+clima.index = tabela.index
+
+# Junçao das duas bases de dados
+tabela_clima = pd.concat([tabela, clima], axis=1)
+# Manter apenas as colunas desejadas
+tabela_clima = tabela_clima[['real', 'avg_temp', 'total_rainfall']]
+
+
+# Preparação de dados
+dados = (
+  tabela_clima
+  .assign(
+    avg_temp_lag40 = lambda x: x.avg_temp.shift(40),
+    total_rainfall_lag40 = lambda x: x.total_rainfall.shift(40),
+    )
+  .dropna()
+)
+
+# Separar amostras
+# Separar treino e teste
+# Separar as últimas 12 observações para teste
+dados_teste = dados.tail(12)
+dados_treino = dados.iloc[:-12]
+
+# Definir y e X para treino
+y_treino = dados_treino['real']
+x_treino = dados_treino.drop(columns=['real'])
+
+# Definir y e X para teste
+y_teste = dados_teste['real']
+x_teste = dados_teste.drop(columns=['real'])
+```
+
+```{python}
+# Estimar modelo
+ajuste_arima = pmd.auto_arima(y = y_treino, exogenous=x_treino, 
+    seasonal = True, m = 26, 
+    stepwise=True,
+    suppress_warnings=True,
+    information_criterion='aic',
+    trace=True)
+```
+
+```{python}
+# Produzir previsões
+#previsao_arima = ajuste_arima.predict(y_teste.shape[0])
+previsao_arima = ajuste_arima.predict(n_periods=len(y_teste))
+
+# Align the predictions with the test set dates
+previsao_arima.index = y_teste.index
+
+# Create the DataFrame for plotting
+# Align 'previsao_arima' to the correct date range in 'dados'
+resultados_arima = pd.DataFrame(
+  data={
+    "data": dados.index,
+    "y": dados['real'],
+  }
+)
+
+# Add predictions only for the test period
+resultados_arima.loc[y_teste.index, 'previsao'] = previsao_arima.values
+
+# Plotting the results
+plot = (
+    p9.ggplot(resultados_arima) +
+    p9.aes(x="data", y="y") +
+    p9.geom_line() +
+    p9.geom_line(mapping=p9.aes(y="previsao"), color="blue") +
+    p9.scale_x_date(date_breaks="2 years", date_labels="%Y") +
+    p9.labs(
+        title="Previsão SARIMAX para o Preço Manga Palmer",
+        subtitle="Ao produtor do Vale do São Francisco",
+        x="",
+        y="Preços Palmer",
+        caption="Dados: CEPEA reprocessados pelo Observatório de Mercado da Embrapa"
+    )
+)
+plot.show()
+```
+
+## Previsão com modelos de Machine Learning
+
+As previsões geradas pelo modelo de machine learning XGBoost podem ser conferidas abaixo:
+
+```{python}
+
+# Ensure y_treino has a proper datetime index
+y_treino = pd.Series(y_treino.values, index=dados_treino.index)
+
+# Estimar modelo XGBoost
+ajuste_xgboost = xgb.XGBRegressor().fit(X=x_treino, y=y_treino)
+
+# Produzir previsões
+previsao_xgboost = ajuste_xgboost.predict(x_teste)
+
+# Convert predictions to a Pandas Series with the same index as y_teste
+previsao_xgboost = pd.Series(previsao_xgboost, index=y_teste.index)
+
+# Create the DataFrame for plotting
+# Align 'previsao_arima' to the correct date range in 'dados'
+resultados_xgboost = pd.DataFrame(
+  data={
+    "data": dados.index,
+    "y": dados['real'],
+  }
+)
+
+# Add predictions only for the test period
+resultados_xgboost.loc[y_teste.index, 'previsao'] = previsao_xgboost.values
+
+# Plotting the results
+plot = (
+  p9.ggplot(resultados_xgboost) +
+  p9.aes(x = "data", y = "y") +
+  p9.geom_line() +
+  p9.geom_line(mapping = p9.aes(y = "previsao"), color = "blue") +
+  p9.scale_x_date(date_breaks = "2 years", date_labels = "%Y") +
+  p9.labs(
+    title = "Previsão XGBOOST para o Preço Manga Palmer",
+      subtitle = "Ao produtor do Vale do São Francisco",
+    x = "",
+    y = "Preços Palmer",
+    caption = "Dados: CEPEA reprocessados pelo Observatório de Mercado da Embrapa"
+  )
+)
+plot.show()
+```
+
+```{python}
+# Criar uma tabela comparativa com as últimas 12 observações
+tabela_comparativa = pd.DataFrame({
+    'Real': y_teste.tail(12),
+    'Previsão_ARIMA': resultados_arima.loc[y_teste.tail(12).index, 'previsao'],
+    'Previsão_XGBoost': previsao_xgboost.tail(12)
+})
+
+# Exibir a tabela
+print(tabela_comparativa)
+```
+
+```{python}
+# Valores reais
+y_real = y_teste.tail(12)
+
+# Previsões
+y_pred_arima = resultados_arima.loc[y_real.index, 'previsao']
+y_pred_xgb = previsao_xgboost.tail(12)
+
+# Função auxiliar para MAPE
+def mean_absolute_percentage_error(y_true, y_pred):
+    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+
+# Avaliação SARIMAX
+mae_arima = mean_absolute_error(y_real, y_pred_arima)
+rmse_arima = np.sqrt(mean_squared_error(y_real, y_pred_arima))
+mape_arima = mean_absolute_percentage_error(y_real, y_pred_arima)
+
+# Avaliação XGBoost
+mae_xgb = mean_absolute_error(y_real, y_pred_xgb)
+rmse_xgb = np.sqrt(mean_squared_error(y_real, y_pred_xgb))
+mape_xgb = mean_absolute_percentage_error(y_real, y_pred_xgb)
+
+# Imprimir os resultados
+print("=== Avaliação das Previsões ===")
+print(f"SARIMAX - MAE: {mae_arima:.2f}, RMSE: {rmse_arima:.2f}, MAPE: {mape_arima:.2f}%")
+print(f"XGBoost - MAE: {mae_xgb:.2f}, RMSE: {rmse_xgb:.2f}, MAPE: {mape_xgb:.2f}%")
+
+```
+
