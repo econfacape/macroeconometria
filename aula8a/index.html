@@ -8,7 +8,7 @@
 
 <meta name="author" content="João Ricardo F. de Lima">
 
-<title>Aula 9 - Econometria de Séries Temporais</title>
+<title>Aula 8a - Econometria de Séries Temporais</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -3088,7 +3088,7 @@ vertical-align: -.125em;
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Aula 9 - Econometria de Séries Temporais</h1>
+<h1 class="title">Aula 8a - Econometria de Séries Temporais</h1>
 </div>
 
 
@@ -3105,7 +3105,7 @@ vertical-align: -.125em;
     <div>
     <div class="quarto-title-meta-heading">Data de Publicação</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">14 de maio de 2025</p>
+      <p class="date">21 de maio de 2025</p>
     </div>
   </div>
   
@@ -3120,7 +3120,7 @@ vertical-align: -.125em;
 <section id="introdução" class="level2">
 <h2 class="anchored" data-anchor-id="introdução">Introdução</h2>
 <p>O objetivo é estimar modelos de previsão de manga palmer, ao produtor do Vale do São Francisco e verificar qual deles possui a maior eficácia.</p>
-<div id="f3627736" class="cell" data-execution_count="1">
+<div id="c4b6d289" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Bibliotecas</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> plotnine <span class="im">as</span> p9</span>
@@ -3207,7 +3207,7 @@ date
 [695 rows x 6 columns]</code></pre>
 </div>
 </div>
-<div id="30ecfb40" class="cell" data-execution_count="2">
+<div id="738d458f" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualização de dados</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>plot <span class="op">=</span>  (p9.ggplot(tabela) <span class="op">+</span></span>
@@ -3236,7 +3236,7 @@ date
 <section id="previsão-com-modelos-econométricos" class="level2">
 <h2 class="anchored" data-anchor-id="previsão-com-modelos-econométricos">Previsão com modelos econométricos</h2>
 <p>As previsões geradas pelo modelo econométrico ARIMA podem ser conferidas abaixo:</p>
-<div id="9f68bfad" class="cell" data-execution_count="3">
+<div id="8b816960" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Dados de Clima</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>clima <span class="op">=</span>pd.read_csv(<span class="st">&#39;dados/df_climate_weekly.csv&#39;</span>, sep<span class="op">=</span><span class="st">&#39;;&#39;</span>, decimal<span class="op">=</span><span class="st">&#39;.&#39;</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -3296,7 +3296,7 @@ date
 <span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>y_teste <span class="op">=</span> dados_teste[<span class="st">&#39;real&#39;</span>]</span>
 <span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a>x_teste <span class="op">=</span> dados_teste.drop(columns<span class="op">=</span>[<span class="st">&#39;real&#39;</span>])</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="b55a0a02" class="cell" data-execution_count="4">
+<div id="4374c3b1" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">&quot;ignore&quot;</span>)</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -3324,7 +3324,7 @@ date
 <pre><code>Melhor modelo: ARIMA(2, 1, 1) com AIC = 530.82</code></pre>
 </div>
 </div>
-<div id="015a0a88" class="cell" data-execution_count="5">
+<div id="9dfb5d30" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>modelo_sarimax <span class="op">=</span> SARIMAX(</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    endog<span class="op">=</span>y_treino,</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    exog<span class="op">=</span>x_treino,</span>
@@ -3341,8 +3341,8 @@ date
 ==============================================================================
 Dep. Variable:                   real   No. Observations:                  667
 Model:               SARIMAX(2, 1, 1)   Log Likelihood                -255.409
-Date:                Wed, 14 May 2025   AIC                            530.818
-Time:                        13:52:23   BIC                            575.801
+Date:                Wed, 21 May 2025   AIC                            530.818
+Time:                        16:11:00   BIC                            575.801
 Sample:                             0   HQIC                           548.249
                                 - 667                                         
 Covariance Type:                  opg                                         
@@ -3370,7 +3370,7 @@ Warnings:
 [1] Covariance matrix calculated using the outer product of gradients (complex-step).</code></pre>
 </div>
 </div>
-<div id="607deb87" class="cell" data-execution_count="6">
+<div id="d589dd51" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Garantir que o índice do exógeno de teste seja numérico sequencial</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co"># para evitar problemas de alinhamento implícito</span></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>x_teste_resetado <span class="op">=</span> x_teste.copy()</span>
@@ -3427,7 +3427,7 @@ Warnings:
 <section id="previsão-com-modelos-de-machine-learning" class="level2">
 <h2 class="anchored" data-anchor-id="previsão-com-modelos-de-machine-learning">Previsão com modelos de Machine Learning</h2>
 <p>As previsões geradas pelo modelo de machine learning XGBoost podem ser conferidas abaixo:</p>
-<div id="af8e320c" class="cell" data-execution_count="7">
+<div id="66dbecea" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Preparação de dados</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>dados_xgb <span class="op">=</span> (</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  tabela_clima</span>
@@ -3510,7 +3510,7 @@ Warnings:
 </div>
 </div>
 </div>
-<div id="b9d51a34" class="cell" data-execution_count="8">
+<div id="4253b500" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Criar uma tabela comparativa com as últimas 12 observações</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>tabela_comparativa <span class="op">=</span> pd.DataFrame({</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;Real&#39;</span>: y_teste.tail(<span class="dv">12</span>),</span>
@@ -3537,7 +3537,7 @@ date
 2025-05-10  3.160000        2.561341          2.953149</code></pre>
 </div>
 </div>
-<div id="fdec1ddc" class="cell" data-execution_count="9">
+<div id="38b7bc63" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Valores reais</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>y_real <span class="op">=</span> y_teste.tail(<span class="dv">12</span>)</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
