@@ -1,5 +1,5 @@
 ---
-title: "Aula 10 - Econometria de Séries Temporais"
+title: "Aula 9 - Econometria de Séries Temporais"
 author: "João Ricardo F. de Lima"
 date: "today"
 editor: source
