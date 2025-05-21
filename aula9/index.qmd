@@ -1,5 +1,5 @@
 ---
-title: "Aula 9 - Econometria de Séries Temporais"
+title: "Aula 10 - Econometria de Séries Temporais"
 author: "João Ricardo F. de Lima"
 date: "today"
 editor: source
@@ -27,283 +27,520 @@ execute:
   echo: TRUE
   message: false
   warning: false
-  cache: false
-jupyter: python3
 ---
 
-## Introdução
+<br>
 
-O objetivo é estimar modelos de previsão de manga palmer, ao produtor do Vale do São Francisco e verificar qual deles possui a maior eficácia. 
+# Modelos ARCH-GARCH
 
-```{python}
-# Bibliotecas
-import pandas as pd
-import plotnine as p9
-from great_tables import GT, md, html, style, loc
-import pmdarima as pmd
-import xgboost as xgb
-#from nixtla import NixtlaClient
-from sklearn.metrics import mean_absolute_error, mean_squared_error
-import numpy as np
+Em geral, as análises feitas em econometria modelam a média condicional de uma variável aleatória $E(Y|X)$. Contudo, os modelos desta aula são diferentes: eles modelam a variância condicional (ou a volatilidade) de uma variável aleatória.
 
-# Load mango price dataset and drop specified columns
-df = (
-    pd.read_csv('dados/dados_manga_palmer_semana.csv', sep=';', decimal='.')
-    .drop(columns=['produto', 'regiao', 'ano', 'semana'])
+Existem várias razões pelas quais se pode querer modelar e prever a volatilidade:
+
+- Avaliar o risco de manter um ativo;
+
+- Construir intervalos de confiança dinâmicos;
+
+ - Obter estimadores mais eficientes ao lidar com heterocedasticidade.
+ 
+Os modelos de heterocedasticidade condicional autorregressiva (ARCH) são projetados especificamente para modelar e prever variâncias condicionais. A variância condicional representa a variância da variável aleatória no tempo $t$, dada a informação disponível até o tempo $t - 1$. Isto significa que ao invés de assumir que a variância dos erros é constante (como em um modelo clássico de regressão), os modelos ARCH reconhecem que a incerteza sobre $y_t$ pode mudar ao longo do tempo, dependendo do comportamento passado.
+
+Em termos matemáticos, se está modelando $\operatorname{Var}(\varepsilon_t \mid \mathcal{F}_{t-1}) = h_t$, onde $\mathcal{F}_{t-1}$ representa todo o conjunto de informações até o tempo $t-1$. Essa abordagem permite capturar períodos de alta e baixa volatilidade, algo frequentemente observado em séries financeiras e macroeconômicas.
+
+Nos modelos ARCH, a variância condicional dos erros é modelada como uma função dos valores passados dos erros ao quadrado (choques anteriores). Isso permite capturar períodos de maior ou menor incerteza ao longo do tempo. Em versões mais gerais, como GARCH ou GARCH-X, a variância também pode depender da variância condicional passada ou de variáveis exógenas.
+
+O modelo ARCH foi introduzido por Engle (1982) e generalizado como GARCH (*Generalized ARCH*) por Bollerslev (1986) e Taylor (1986). Esses modelos são amplamente utilizados em vários ramos da econometria, especialmente na análise de séries temporais financeiras. 
+
+A ideia central é que a variância condicional dos erros depende de erros passados:
+
+$$
+y_t = \mu + \phi y_{t-1} + \varepsilon_t
+$$
+
+$$
+h_t = \alpha_0 + \alpha_1 \varepsilon_{t-1}^2,  \
+\varepsilon_t \sim N(0, h_t)
+$$
+Em um modelo ARCH básico (ARCH (1)), $\mu$ ($\operatorname{E}(y_t \mid \mathcal{F}{t-1})$) é uma constante que representa a média condicional de $y_t$ (modelada em geral via um modelo ARIMA). A parte inovadora do modelo é que, embora a média seja constante, a variância muda ao longo do tempo com base nos erros passados.
+
+Ao desenvolver um modelo ARCH, devem ser especificados três elementos: a equação da média condicional, a equação da variância condicional e a distribuição condicional dos erros. 
+
+A distribuição condicional dos erros em um modelo ARCH ou GARCH define como os choques $\varepsilon_t$ se comportam, dado o passado ($\mathcal{F}_{t-1}$). A especificação padrão assume que os erros são normalmente distribuídos com média zero e variância condicional $h_t$:
+
+$$
+\varepsilon_t \mid \mathcal{F}_{t-1} \sim N(0, h_t)
+$$
+
+Especificamente em séries financeiras, a variância do resíduo varia ao longo do tempo de uma maneira que depende de quão elevados tenham sido os erros no passado. Muitas vezes há evidência de uma "aglomeração" de erros grandes e pequenos.
+
+No entanto, em aplicações empíricas — especialmente com séries financeiras — os erros costumam apresentar caudas mais pesadas do que a distribuição normal permite. Por isso, é comum utilizar distribuições alternativas, como a t de Student ou a distribuição generalizada de erro (GED), para capturar melhor eventos extremos (*outliers*) e obter inferência mais robusta.
+ 
+Assim, se está lidando com um tipo específico de heterocedasticidade, em que a variância condicional dos erros depende dos valores passados dos erros ao quadrado. Essa estrutura permite que a volatilidade mude ao longo do tempo, de acordo com os choques anteriores.
+
+O resíduo $\varepsilon_t$ é heterocedástico, condicional a $\varepsilon_{t-1}$. A variância condicional do erro $\varepsilon_t$ depende da informação passada, como $\varepsilon_{t-1}^2$. Ao modelar explicitamente essa heterocedasticidade condicional, é possível obter estimativas mais eficientes dos parâmetros da equação da média, já que os erros não são mais tratados como homocedásticos por construção. 
+
+Como a variância de $\varepsilon_t$ na equação acima depende apenas da volatilidade do último período, este modelo é denominado de ARCH(1).
+ 
+Generalizando, a variância $h_t$ pode depender de múltiplos termos de erros ao quadrado defasados. Assim, o ARCH(p) é definido como 
+
+$$
+h_t=\alpha_0+\alpha_1\epsilon_{t-1}^2+\alpha_2\epsilon_{t-2}^2+ \dots + \alpha_p\epsilon_{t-p}^2
+$$
+
+Os $p+1$ parâmetros do modelo de variância ($\alpha_0, \alpha_1, \dots, \alpha_p$) e os eventuais parâmetros da equação da média (como os $\phi$s de um modelo AR) são estimados conjuntamente por máxima verossimilhança.
+ 
+<br>
+
+## Restrições no Modelos ARCH(p)
+
+
+A principal limitação do modelo ARCH(p) é que para capturar persistência de longo prazo na variância, é necessário usar valores altos de $p$, o que aumenta o número de parâmetros e pode levar à instabilidade do modelo.
+
+A persistência de longo prazo na variância ocorre quando choques grandes no passado continuam afetando a variância condicional por vários períodos à frente. Em outras palavras, se ocorre um evento com alta volatilidade em $t$, ele ainda tem impacto significativo sobre a incerteza nos períodos $t+1$, $t+2$, $t+3$, etc.
+
+Esse fenômeno é comum em séries financeiras, como retornos de ativos: períodos de alta volatilidade (como em crises) costumam ser seguidos por outros períodos igualmente voláteis, mesmo que os choques originais tenham passado. Essa memória longa da variância é chamada de volatilidade persistente.
+
+No modelo ARCH, seria necessário usar muitos termos defasados dos resíduos ao quadrado ($\varepsilon_{t-i}^2$) para capturar esse efeito — o que torna o modelo instável e com muitos parâmetros.
+
+As séries com efeito ARCH possuem algumas características e é necessário impor restrições nos parâmetros para garantir que o modelo seja bem comportado:
+
+ - Para garantir variância positiva e estacionariedade do modelo é necessário impor restrições nos parâmetros do modelo. Para um ARCH(p)
+
+$$
+h_t=\alpha_0+\alpha_1\epsilon_{t-1}^2+\alpha_2\epsilon_{t-2}^2+ \dots + \alpha_p\epsilon_{t-p}^2
+$$
+
+a condição suficiente para variância condicional positiva é que 
+
+$\alpha_0>0$ e $\alpha_p \ge 0$ para todo i, com i=1,2,3,...,p. a condição necessária para que a série seja estacionária é que o $\sum_{i=1}^{p}\alpha_i < 1$.
+
+Essa última condição implica que os choques passados têm influência decrescente na variância ao longo do tempo, garantindo que a variância condicional não exploda.
+
+
+## Deficiências no Modelos ARCH
+
+Dentre as principais limitações do modelo ARCH, destacam-se:
+
+- A tendência à superestimação da volatilidade, especialmente em períodos de choques isolados;
+
+- A incapacidade de captar assimetrias, tratando erros positivos e negativos de forma simétrica.
+
+O modelo ARCH assume que a volatilidade condicional depende apenas da magnitude dos choques passados ($\varepsilon_{t-i}^2$), ignorando o sinal desses choques. Na prática, porém, os mercados financeiros costumam reagir de forma diferente a boas e más notícias. Por exemplo:
+
+Uma queda acentuada nos preços (retorno negativo) tende a aumentar a percepção de risco e, portanto, a volatilidade futura. Já uma alta nos preços (retorno positivo) costuma gerar menor impacto na volatilidade.
+
+Esse comportamento é conhecido como efeito assimétrico ou efeito alavancagem (*leverage effect*). Modelos como o TARCH (*Threshold ARCH*) e o EGARCH (*Exponential GARCH*) foram desenvolvidos para capturar essa assimetria, permitindo que choques negativos tenham impacto diferente da mesma magnitude de choques positivos.
+
+## O Modelo GARCH (p,q)
+ 
+Uma das limitações do modelo ARCH é que, para capturar persistência de longo prazo na volatilidade, muitas vezes é necessário ajustar modelos com ordem elevada ($p > 3$), o que aumenta o número de parâmetros e pode comprometer a estabilidade do modelo.
+
+Para contornar essa limitação, Bollerslev (1986) propôs o modelo GARCH (Generalized ARCH), que estende o ARCH ao incluir também valores defasados da variância condicional. Isso permite representar a dinâmica da volatilidade de forma mais parsimoniosa, com menos parâmetros.
+
+A literatura recomenda o uso do modelo GARCH quando a ordem necessária de um ARCH for maior que 3, ou sempre que se observar alta persistência na variância condicional.
+
+No modelo GARCH(p, q), a variância condicional $h_t$ é modelada como uma função dos erros passados ao quadrado e das variâncias condicionais passadas:
+
+$$
+h_t=\alpha_0+\sum_{j=1}^{p}\alpha_j\varepsilon_{t-j}^2+\sum_{i=1}^{q}\beta_jh_{t-i}^2
+$$
+
+A equação modela a variância condicional, sendo função de três termos: a) constante; b) volatilidade fo período anterior (termo ARCH) e a variância prevista do último período (termo GARCH).
+
+Esse modelo permite capturar de forma eficiente a volatilidade agrupada (volatility clustering) observada frequentemente em séries financeiras.
+ 
+No modelo GARCH(p, q), o parâmetro p refere-se ao número de termos defasados da variância condicional (componente GARCH — autorregressivo), e o parâmetro q refere-se ao número de termos defasados dos erros ao quadrado (componente ARCH — semelhante a média móvel).
+
+Por exemplo, no modelo GARCH(1,1), a variância condicional atual $h_t$ depende de:
+
+ - uma constante (média de longo prazo),
+
+ - da variância condicional do período anterior ($h_{t-1}$),
+
+ - e do erro ao quadrado do período anterior ($\varepsilon_{t-1}^2$).
+
+O modelo ARCH(q) é um caso especial do GARCH, em que não há termos defasados da variância condicional, isto é, um GARCH(0, q).
+
+Esse tipo de especificação é particularmente útil em finanças: agentes formam suas expectativas de volatilidade atual como uma média ponderada entre a média de longo prazo, a volatilidade passada e os choques mais recentes.
+
+Se o retorno de um ativo foi inesperadamente alto ou baixo (grande erro em módulo), a estimativa da variância para o próximo período aumenta. Esse comportamento é consistente com o fenômeno de agrupamento de volatilidade (volatility clustering), frequentemente observado em dados financeiros.
+
+Embora o GARCH(1,1) seja suficiente na maioria das aplicações, modelos de ordem superior, como o GARCH(2,2), podem ser estimados, especialmente em séries com dinâmica de volatilidade mais complexa.
+
+<br>
+
+## O Modelo TARCH
+
+O modelo TARCH (*Threshold ARCH*), proposto por Glosten, Jagannathan e Runkle (1993), é uma extensão do GARCH que permite capturar efeitos assimétricos da volatilidade, ou seja, a possibilidade de que choques negativos tenham impacto diferente sobre a variância condicional em relação a choques positivos.
+
+Essa característica é especialmente relevante em mercados financeiros, onde quedas nos preços tendem a aumentar mais a volatilidade futura do que altas de mesma magnitude — fenômeno conhecido como efeito alavancagem (*leverage effect*).
+
+
+### Especificação do modelo TARCH(1,1)
+
+
+A equação da variância condicional no modelo TARCH(1,1) é dada por:
+
+$$
+h_t = \alpha_0 + \alpha_1 \varepsilon_{t-1}^2 + \gamma_1 D_{t-1} \varepsilon_{t-1}^2 + \beta_1 h_{t-1}
+$$
+
+onde:
+
+- $\varepsilon_t \sim N(0, h_t)$;
+- $D_{t-1} = 1$ se $\varepsilon_{t-1} < 0$, e $0$ caso contrário.
+
+### Interpretação
+
+- **$\alpha_1$**: impacto geral de choques passados ao quadrado;
+- **$\gamma_1$**: efeito adicional quando o choque foi negativo;
+- **$\beta_1$**: persistência da variância condicional.
+
+Se **$\gamma_1 > 0$**, choques negativos elevam a variância condicional mais do que choques positivos — capturando a **assimetria** na resposta da volatilidade.
+
+### Vantagens do TARCH
+
+- Permite que a volatilidade **reaja de forma diferente a boas e más notícias**;
+- Capta o **efeito alavancagem** observado em muitas séries financeiras;
+- É relativamente simples de implementar e interpretar.
+
+O modelo pode ser generalizado para TARCH(p, q) e também combinado com distribuições de erro não normais (como a t de Student), oferecendo ainda mais flexibilidade para modelar a volatilidade condicional.
+
+
+## Estimação de Modelo ARCH no R
+
+``` {r econ9_1, warning=FALSE, message=FALSE }
+#Direcionado o R para o Diretorio a ser trabalhado
+setwd('/Users/jricardofl/Dropbox/tempecon/facape/econometria2')
+
+#Inicio do Script
+
+#Pacotes a serem usados
+library(forecast)
+library(ggplot2)
+#library(easyGgplot2)
+library(urca)
+library(stargazer)
+library(tseries)
+library(lmtest)
+library(ggthemes)
+library(zoo)
+library(xts)
+library(FinTS)
+library(scales)
+library(uroot)
+library(fGarch)
+library(rugarch)
+library(PerformanceAnalytics)
+library(tsibbledata)
+library(fable)
+library(feasts)
+library(fabletools)
+
+options(digits=4)
+#options(scipen = 999)
+#options(scipen = 0)
+
+#Extracao dos dados
+dados <- read.csv2('dados_manga_tommy_semana.csv', header=T, sep=";", dec=".")
+#dados <- dados[,-c(9:10)] #retirar as ultimas colunas
+colnames(dados)[1]<-'produto'
+
+#Entrando dados no R - Deflator
+igpdi <- read.csv2('igpdi.csv', 
+                   header=T, sep=";",
+                   dec=".")
+
+#Juntando as duas bases de dados
+dados_comb<-cbind(dados, igpdi)
+
+#Retira variaveis desnecessarias
+dadost<-dados_comb[,-c(1,2,6,7)]
+
+#Deflacionar a serie de manga
+dadost$preco_def <- dadost[,3]*(tail(dadost[,4],1)/dadost[,4])
+
+
+#Analise de Serie Temporal
+preco_tommy <- dadost[,5]
+
+#Setando como serie temporal
+preco_tommy <- ts(preco_tommy, start=c(2012,1), freq=52)
+
+#Grafico da Série
+autoplot(preco_tommy, main='Evolução do preço semanal de Manga Tommy ao produtor do VSF') +
+  geom_line(colour="blue", size=1.0) + xlab('Semanas')+ ylab('Preço R$')
+```
+
+
+## Transformação em dados mensais
+
+```{r}
+# Converter preco_tommy (ts) em xts com datas semanais
+datas_semanais <- seq.Date(from = as.Date("2012-01-01"), by = "week", length.out = length(preco_tommy))
+serie_xts <- xts(preco_tommy, order.by = datas_semanais)
+
+# Agregar para média mensal
+serie_mensal <- apply.monthly(serie_xts, mean)
+colnames(serie_mensal) <- "preco_mensal"
+
+serie_mensal_ts <- ts(as.numeric(serie_mensal), start = c(2012, 1), frequency = 12)
+
+# Visualizar o gráfico
+autoplot(serie_mensal, main = "Preço Médio Mensal da Manga Tommy - VSF") +
+  geom_line(color = "darkgreen", size = 1) +
+  xlab("Ano") + ylab("Preço deflacionado (R$)")
+```
+
+
+## Análise da Raiz Unitária
+
+<br>
+
+``` {r econ9_2, warning=FALSE, message=FALSE }
+#Visualizando as correlações das series
+#INICIO DAS ANALISES PARA PREVISÃO
+ggtsdisplay(serie_mensal_ts, main='Preco Mensal de Manga Tommy ao Produtor Vale - MI')
+
+#Teste de Raiz Unitaria na Serie
+#Verificacao da Estacionariedade das s?ries
+#Teste de raiz unitaria DF-GLS
+#Defini??o do numero m?ximo de lags
+print(12*(length(serie_mensal_ts)/100)^(1/4))
+
+#Estatistica de Teste DFGLS para preco_tommy
+serie_mensal_tsT.dfgls <- ur.ers(serie_mensal_ts, type = c("DF-GLS"),
+                      model = c("trend"),
+                      lag.max = 9)
+summary(serie_mensal_tsT.dfgls)
+
+#Teste de Raiz Unitaria Sazonal HEGY
+hegy.test(serie_mensal_ts, deterministic = c(1,1,0), lag.method = "AIC")
+```
+
+Os resultados indicam que não foi encontrada raiz unitária regular no teste DF-GLS e nao foram encontradas raizes unitárias sazonais com o teste HEGY. Assim, não será necessário diferenciar a série.
+
+<br>
+
+## Estimação do Modelo ARIMA e verificação de ARCH
+
+<br>
+
+``` {r econ9_3, warning=FALSE, message=FALSE }
+#Estimacao do Modelo Auto-ARIMA
+auto.arima <- auto.arima(serie_mensal_ts, max.p=10, max.d=1, max.D=1, max.q=10, max.P=10, max.Q=10,
+                         seasonal = T, trace = TRUE)
+summary(auto.arima)
+coeftest(auto.arima)
+tsdiag(auto.arima)
+
+#Visualizando a correlação dos resíduos
+ggtsdisplay(auto.arima$residuals, main='Residuos dos ARIMA')
+
+#Teste de Ljung Box para autocorrelação nos resíduos
+#Hipotese nula do teste é que os residuos nao sao autocorrelacionados
+Box.test(auto.arima$residuals, lag=40,
+         type="Ljung-Box", fitdf=length(coef(auto.arima)))
+
+#Teste para verificar se os residuos seguem ARCH
+#H0: Não existe efeito ARCH 
+ArchTest(auto.arima$residuals, lags = 1, demean = TRUE)
+```
+O teste de Ljung-Box indica a inexistência de autocorrelação nos resíduos do ARIMA estimado, mas o teste ARCH identificou a presença de efeito ARCH nos resíduos do ARIMA (4,0,0).  Assim, é possível estimar um modelo ARCH no próximo passo. 
+
+
+# Estimação do modelo ARCH
+
+``` {r econ9_4, warning=FALSE, message=FALSE }
+residuos_arima <- residuals(auto.arima)
+
+arch01 <- garch(residuos_arima, order = c(0,1), trace=FALSE)
+arch02 <- garch(residuos_arima, order = c(0,2), trace=FALSE)
+arch03 <- garch(residuos_arima, order = c(0,3), trace=FALSE)
+garch11 <- garch(residuos_arima, order = c(1,1), trace=FALSE)
+garch22 <- garch(residuos_arima, order = c(2,2), trace=FALSE)
+
+#Escolha do modelo ARCH com AICc - 
+N <- length(serie_mensal_ts)
+loglik0 <- -0.5 * N * (1 + log(2 * pi * mean(auto.arima$residuals^2)))
+loglik1 <- logLik(arch01)
+loglik2 <- logLik(arch02)
+loglik3 <- logLik(arch03)
+loglik4 <- logLik(garch11)
+loglik5 <- logLik(garch22)
+
+loglik <- c(loglik0, loglik1, loglik2, loglik3, loglik4, loglik5)
+q <- c(0, 1, 2, 3, 4, 5)
+k <- q + 1
+aicc <- -2 * loglik  + 2 * k * N / (N - k - 1)
+aicc
+#stargazer(print(data.frame(q, loglik, aicc)))
+
+#Modelo Escolhido
+fit.arch <- garch(auto.arima$residuals, c(0, 1), trace=FALSE)
+summary(fit.arch)
+```
+
+``` {r econ9_4a, warning=FALSE, message=FALSE}
+plot.ts(fit.arch$fitted.values, main = "Variância Condicional Estimada - ARCH(1)", col = "blue")
+
+# Extrair a coluna correta da matriz
+variancia_estimada <- as.numeric(fit.arch$fitted.values[,1])
+
+# Criar data frame com a variância condicional estimada corretamente
+df_vol <- data.frame(
+  date = seq.Date(as.Date("2012-01-01"), by = "month", length.out = length(residuos_arima)),
+  resid = residuos_arima,
+  ht = variancia_estimada # CORRETO para tseries::garch()
 )
 
-# Create the date range from 2012-01-07 to today
-date_range = pd.date_range(start='2012-01-01', end=pd.Timestamp.today(), freq='W-SAT')
+# Gráfico da variância condicional
+ggplot(df_vol, aes(x = date, y = ht)) +
+  geom_line(col = '#ff9933') +
+  ylab('Variância Condicional') +
+  xlab('Data') +
+  ggtitle('Volatilidade estimada pelo modelo ARCH(1)')
+```
 
-# Remove the specific dates (53rd weeks)
-dates_to_remove = [pd.Timestamp('2016-12-31'), pd.Timestamp('2022-12-31')]
-date_range = date_range[~date_range.isin(dates_to_remove)]
+Claramente, há períodos com picos de volatilidade, o que é característico de séries com *volatility clustering* — justamente o que o modelo ARCH(1) busca capturar. O gráfico apresenta agrupamentos de alta volatilidade, com destaque para: a) Um pico ao redor de 2016; b) Outros picos entre 2018–2020; c) E uma sequência forte de aumentos em 2024 e início de 2025.
 
-# Assign the date range as a new column
-df['date'] = date_range[:len(df)]
-# Assign the date range as a new column
-df['date2'] = date_range[:len(df)]
+Esses episódios são plausíveis para séries de preços agrícolas, que podem refletir: problemas climáticos, quebra de safra, mudanças cambiais, entre outros choques.
 
-# Set the date as the index
-df = df.set_index('date')
+```{r econ9_4b, warning=FALSE, message=FALSE}
+# Diagnóstico com os resíduos do ARCH(1)
+resid.arch <- residuals(fit.arch)
+plot(resid.arch, type = "l", col = "black", main = "Resíduos do modelo ARCH(1)")
 
-# Load igpdi dataset
-igpdi = (
-    pd.read_csv('dados/igpdi.csv', sep=';', decimal='.')
-    .assign(date=df.index)
-    .drop(columns=['ano', 'semana'])
-    .set_index('date')
-)
+# Verificar se os resíduos são ruído branco
+ggtsdisplay(resid.arch, main = 'Resíduos do ARCH(1)')
+```
 
-# Merge DataFrames
-tabela = df.join(igpdi, how='inner')
+Assim, os gráficos das funções de autocorrelação mostram que os resíduos se comportam como ruído branco. A maioria das autocorrelações está dentro das bandas de confiança (azul). Pequenos picos são esperados por acaso, mas nada persistente.
 
-# Deflacionar a série com data base = último mês observado
-indice_data_base = tabela.query("date == date.max()").igpdi.values[0]
-tabela = tabela.assign(real = lambda x: (indice_data_base / x.igpdi) * x.preco)
 
-# Display the merged DataFrame
-print(tabela)
+## Estimação do modelo ARCH - Retornos.
+
+
+Neste caso, serão usados os retornos. Retornos são mais estacionários do que preços — o que facilita modelagem de média e variância. Volatilidade condicional faz mais sentido em séries de retornos, especialmente em ativos e preços de commodities. A maioria dos modelos ARCH/GARCH da literatura trabalha com $r_t = \log(P_t) - \log(P_{t-1})$. 
+
+``` {r econ9_5, warning=FALSE, message=FALSE }
+# Garantir que serie_mensal_ts esteja numérica
+serie_mensal_ts <- ts(as.numeric(serie_mensal), start = c(2012, 1), frequency = 12)
+
+# Criar vetor de datas mensais (não semanais!)
+date <- seq.Date(as.Date("2012-01-01"), by = "month", length.out = length(serie_mensal_ts))
+
+# Transformar em objeto xts corretamente
+serie_mensal_xts <- xts(serie_mensal_ts, order.by = date)
+
+# Calcular retornos logarítmicos (contínuos) e remover NA inicial
+retorno <- serie_mensal_xts |> 
+  PerformanceAnalytics::Return.calculate(method = "log") |> 
+  na.omit()
+
+# Visualizar os retornos
+autoplot(retorno) +
+  ggtitle("Retornos contínuos da série mensal da Manga Tommy") +
+  ylab("Retorno (%)") + xlab("Data")
 
 ```
 
-```{python}
-# Visualização de dados
-(
-  p9.ggplot(tabela) +
-  p9.aes(x = "date2", y = "real") +
-  p9.geom_line() +
-  p9.scale_x_date(date_breaks = "2 year", date_labels = "%Y") +
-  p9.labs(
-    title = "Evolução dos Preços de Manga Palmer: 2012 a 2025",
-    subtitle = "Ao produtor do Vale do São Francisco",
-    x = "",
-    y = "Preços Palmer",
-    caption = "Dados: CEPEA reprocessados pelo Observatório de Mercado da Embrapa"
-    )
-)
+
+```{r econ9_6, warning=FALSE, message=FALSE}
+retorno_quad = retorno^2
+
+ggtsdisplay(retorno)
+ggtsdisplay(retorno_quad)
+
+# Verificaçao de retornos sao autocorrelacioandos
+#H0: a série é distribuida de forma independente
+#Ha> a serie apresenta correlaçao serial
+Box.test(retorno, lag = 24, type = 'Ljung')
 ```
 
-## Previsão com modelos econométricos
+A hipótese de que os retornos são ruído branco (não autocorrelacionados) foi rejeitada com alto grau de confiança, mesmo considerando até 24 meses de defasagens. Em mercados agrícolas (como o de manga ao produtor), é comum observar alguma dependência intertemporal, por causa de: a) Sazonalidade da produção; Ciclos de exportação/demanda; Preços administrados ou defasados por contratos.
 
-As previsões geradas pelo modelo econométrico ARIMA podem ser conferidas abaixo:
-
-```{python}
-# Dados de Clima
-clima =pd.read_csv('dados/df_climate_weekly.csv', sep=';', decimal='.')
-
-# Convert 'date' column to datetime format if not already
-clima['date'] = pd.to_datetime(clima['date'], dayfirst=True)
-
-# Extract the year from the 'date' column
-clima['year'] = clima['date'].dt.year
-
-# Group by 'year' and count the number of observations
-observations_per_year = clima.groupby('year').size().reset_index(name='count')
-
-# Display the result
-#print(observations_per_year)
-
-# Extrair o ano do índice de datas
-tabela['ano'] = tabela.index.year
-
-# Contar número de observações (semanas) por ano
-semanas_por_ano = tabela.groupby('ano').size()
-#print(semanas_por_ano)
-
-# Junção dos dados
-
-# 1. Remover a coluna 'date'
-clima = clima.drop(columns=['date'])
-
-# 2. Atribuir o índice do DataFrame 'tabela' ao DataFrame 'clima'
-clima.index = tabela.index
-
-# Junçao das duas bases de dados
-tabela_clima = pd.concat([tabela, clima], axis=1)
-# Manter apenas as colunas desejadas
-tabela_clima = tabela_clima[['real', 'avg_temp', 'total_rainfall']]
-
-
-# Preparação de dados
-dados = (
-  tabela_clima
-  .assign(
-    avg_temp_lag40 = lambda x: x.avg_temp.shift(40),
-    total_rainfall_lag40 = lambda x: x.total_rainfall.shift(40),
-    )
-  .dropna()
-)
-
-# Separar amostras
-# Separar treino e teste
-# Separar as últimas 12 observações para teste
-dados_teste = dados.tail(12)
-dados_treino = dados.iloc[:-12]
-
-# Definir y e X para treino
-y_treino = dados_treino['real']
-x_treino = dados_treino.drop(columns=['real'])
-
-# Definir y e X para teste
-y_teste = dados_teste['real']
-x_teste = dados_teste.drop(columns=['real'])
+```{r econ9_6b, warning=FALSE, message=FALSE}
+#Verificacao da média do retorno se é igual a zero
+#H0: media é igual a zero
+t.test(as.vector(retorno))
 ```
 
-```{python}
-# Estimar modelo
-ajuste_arima = pmd.auto_arima(y = y_treino, exogenous=x_treino, 
-    seasonal = True, m = 26, 
-    stepwise=True,
-    suppress_warnings=True,
-    information_criterion='aic',
-    trace=True)
+Não há evidência estatística de que a média dos retornos seja diferente de zero. A hipótese de média zero não é rejeitada, mesmo com nível de 10% de significância.
+
+Então, mesmo com média dos retornos igual a zero em média, não se deve assumir média constante e independente, porque há memória nos retornos (autocorrelação). Isso exige modelar a média condicional (ARIMA ou ao menos AR) antes da variância (GARCH).
+
+```{r econ9_6a, warning=FALSE, message=FALSE}
+# Utilizar $aretono^2$ para verificar se existe heterocedasticidade condicional, o chamado **efeito ARCH**.
+
+y <- retorno - mean(retorno)
+y_quad <- y^2
+Box.test(y_quad, lag = 24, type = 'Ljung')
+
+forecast::Acf(y_quad)
 ```
 
-```{python}
-# Produzir previsões
-#previsao_arima = ajuste_arima.predict(y_teste.shape[0])
-previsao_arima = ajuste_arima.predict(n_periods=len(y_teste))
+Como o p-valor é muito alto (0,90), não há evidência de autocorrelação nos quadrados dos retornos. Isto significa que não há heterocedasticidade condicional detectável nos retornos logarítmicos mensais da série da manga Tommy.
 
-# Align the predictions with the test set dates
-previsao_arima.index = y_teste.index
+Isto indica que provavelmente não será necessário estimar um modelo ARCH/GARCH, porque a variância condicional dos retornos parece constante ao longo do tempo.  
 
-# Create the DataFrame for plotting
-# Align 'previsao_arima' to the correct date range in 'dados'
-resultados_arima = pd.DataFrame(
-  data={
-    "data": dados.index,
-    "y": dados['real'],
-  }
+## Estimação do modelo ARCH - 2 Forma
+
+O modelo pode ser construído por meio do pacote `rugarch` em duas etapas:
+ 
+ - Especificação do modelo com a função `ugarchspec`
+ - Estimação com a função `ugarchfit`
+ 
+Na primeira etapa, os critérios devem ser escolhidos:
+
+ - `mean.model`: uma lista contendo a ordem do modelo ARMA e se há a inclusão ou não de um modelo para a média (A escolha da ordem 0,0 define uma média constante)
+ 
+ - `variance.model`: uma lista contendo o tipo do modelo e a ordem do modelo. Note que `sGARCH` significa `standard` e (1,0) define um modelo `ARCH`.
+ 
+ - `distribution.model`: o tipo de distribuição escolhido no model.
+ 
+Para cada parâmetro existe uma opção definida de acordo com a liteturatura conhecida do modelo, seja a escolha da estimação da média, da variância e da distribuição. Para mais detalhes, é necessário ler a documentação usando `?ugarchespec`.
+
+Definido a especificação do modelo, é necessário estimar utilizando `ugarchfit`, em que os dois parâmetros mais importantes são `data` para dados (a classe deve ser numeric vector, matrix, data.frame, zoo, xts, timeSeries, ts ou irts) e `spec` para especificação.
+
+
+```{r econ9_7, warning=FALSE, message=FALSE}
+
+archspec <- rugarch::ugarchspec(
+  mean.model = list(armaOrder = c(4, 0), include.mean = TRUE), # ajuste conforme seu ARIMA(4,0,0)
+  variance.model = list(model = "sGARCH", garchOrder = c(1, 0)),
+  distribution.model = "norm"
 )
 
-# Add predictions only for the test period
-resultados_arima.loc[y_teste.index, 'previsao'] = previsao_arima.values
+archfit <- rugarch::ugarchfit(data = serie_mensal_ts, spec = archspec)
 
-# Plotting the results
-plot = (
-    p9.ggplot(resultados_arima) +
-    p9.aes(x="data", y="y") +
-    p9.geom_line() +
-    p9.geom_line(mapping=p9.aes(y="previsao"), color="blue") +
-    p9.scale_x_date(date_breaks="2 years", date_labels="%Y") +
-    p9.labs(
-        title="Previsão SARIMAX para o Preço Manga Palmer",
-        subtitle="Ao produtor do Vale do São Francisco",
-        x="",
-        y="Preços Palmer",
-        caption="Dados: CEPEA reprocessados pelo Observatório de Mercado da Embrapa"
-    )
-)
-plot.show()
+archfit
+
+coef(archfit)
 ```
 
-## Previsão com modelos de Machine Learning
+No modelo ajustado:
 
-As previsões geradas pelo modelo de machine learning XGBoost podem ser conferidas abaixo:
+$\omega = 0,446$ indica o nível base da volatilidade. É o valor que a variância condicional $h_t$ tende a assumir quando não há choques recentes. Em outras palavras, $\omega$ representa a volatilidade mínima esperada quando o erro ao quadrado do período anterior é pequeno ou nulo.
 
-```{python}
+$\alpha_1 = 0,353$ indica que aproximadamente 35% da variância atual é explicada pelo choque do período anterior.
 
-# Ensure y_treino has a proper datetime index
-y_treino = pd.Series(y_treino.values, index=dados_treino.index)
+No caso de *Weighted Ljung-Box Test on Standardized Residuals*, o objetivo aqui é verificar se os resíduos padronizados do modelo ARCH(1) ainda apresentam autocorrelação serial, o que não deveria acontecer se o modelo está bem especificado. A $H_0$ é que os resíduos não têm autocorrelação (ou seja, são ruído branco). Todos os p-valores são bem maiores que 0,10, o que significa que não se rejeita $H_0$ em nenhum caso. Portanto, não há autocorrelação nos resíduos padronizados do modelo ARCH(1) estimado.
 
-# Estimar modelo XGBoost
-ajuste_xgboost = xgb.XGBRegressor().fit(X=x_treino, y=y_treino)
+O Nyblom Teste avalia se os parametros são estáveis (constantes) ao longo do tempo. Como o valor crítico a 10% é 1,69 e todos os valores das estatisticas individuais estão abaixo deste valor, todos os parâmetros são estáveis. Com isto, se pode confiar nas previsões e inferências. 
 
-# Produzir previsões
-previsao_xgboost = ajuste_xgboost.predict(x_teste)
+O Sign Test (proposto por Engle e Ng (1993)) é um teste muito útil para detectar assimetria na forma como choques positivos e negativos afetam a volatilidade, algo que os modelos ARCH/GARCH padrão não capturam diretamente. A $H_0$ é que não há viés de sinal — choques positivos e negativos têm o mesmo impacto na volatilidade. Os resultados não apresentaram assimetrias no impacto dos choques sobre a volatilidade. Com isto, não se tem a necessidade de estimar um modelo TARCH, por exemplo. 
 
-# Convert predictions to a Pandas Series with the same index as y_teste
-previsao_xgboost = pd.Series(previsao_xgboost, index=y_teste.index)
+Finalmente, o teste de aderencia (Adjusted Pearson Goodness of fit test) é um teste de aderência do modelo aos dados, especificamente projetado para avaliar se os resíduos padronizados do modelo seguem a distribuição assumida (Normal). É um teste de normalidade. Os resultados mostram que não rejeitamos a Hipotese nula, ou seja, os resíduos seguem a distribuição Normal. 
 
-# Create the DataFrame for plotting
-# Align 'previsao_arima' to the correct date range in 'dados'
-resultados_xgboost = pd.DataFrame(
-  data={
-    "data": dados.index,
-    "y": dados['real'],
-  }
-)
 
-# Add predictions only for the test period
-resultados_xgboost.loc[y_teste.index, 'previsao'] = previsao_xgboost.values
+## Previsão do modelo ARCH
 
-# Plotting the results
-plot = (
-  p9.ggplot(resultados_xgboost) +
-  p9.aes(x = "data", y = "y") +
-  p9.geom_line() +
-  p9.geom_line(mapping = p9.aes(y = "previsao"), color = "blue") +
-  p9.scale_x_date(date_breaks = "2 years", date_labels = "%Y") +
-  p9.labs(
-    title = "Previsão XGBOOST para o Preço Manga Palmer",
-      subtitle = "Ao produtor do Vale do São Francisco",
-    x = "",
-    y = "Preços Palmer",
-    caption = "Dados: CEPEA reprocessados pelo Observatório de Mercado da Embrapa"
-  )
-)
-plot.show()
-```
+```{r econ9_9, warning=FALSE, message=FALSE}
+# Previsão Fora da Amostra
+archforecast <- ugarchforecast(fitORspec = archfit, n.ahead = 4)
 
-```{python}
-# Criar uma tabela comparativa com as últimas 12 observações
-tabela_comparativa = pd.DataFrame({
-    'Real': y_teste.tail(12),
-    'Previsão_ARIMA': resultados_arima.loc[y_teste.tail(12).index, 'previsao'],
-    'Previsão_XGBoost': previsao_xgboost.tail(12)
-})
+sigma(archforecast)
+```   
 
-# Exibir a tabela
-print(tabela_comparativa)
-```
-
-```{python}
-# Valores reais
-y_real = y_teste.tail(12)
-
-# Previsões
-y_pred_arima = resultados_arima.loc[y_real.index, 'previsao']
-y_pred_xgb = previsao_xgboost.tail(12)
-
-# Função auxiliar para MAPE
-def mean_absolute_percentage_error(y_true, y_pred):
-    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
-
-# Avaliação SARIMAX
-mae_arima = mean_absolute_error(y_real, y_pred_arima)
-rmse_arima = np.sqrt(mean_squared_error(y_real, y_pred_arima))
-mape_arima = mean_absolute_percentage_error(y_real, y_pred_arima)
-
-# Avaliação XGBoost
-mae_xgb = mean_absolute_error(y_real, y_pred_xgb)
-rmse_xgb = np.sqrt(mean_squared_error(y_real, y_pred_xgb))
-mape_xgb = mean_absolute_percentage_error(y_real, y_pred_xgb)
-
-# Imprimir os resultados
-print("=== Avaliação das Previsões ===")
-print(f"SARIMAX - MAE: {mae_arima:.2f}, RMSE: {rmse_arima:.2f}, MAPE: {mape_arima:.2f}%")
-print(f"XGBoost - MAE: {mae_xgb:.2f}, RMSE: {rmse_xgb:.2f}, MAPE: {mape_xgb:.2f}%")
-
-```
-
+As previsões são para os próximos 4 meses após o último ponto da amostra. Essa função retorna os desvios padrões condicionais previstos, ou seja, a volatilidade esperada para cada mês futuro. A volatilidade esperada diminui mês a mês. Isso indica que, segundo o modelo ARCH(1), o impacto do último grande choque está se dissipando, e a série deve entrar num período de menor incerteza. Em termos econômicos, você está prevendo que os preços da manga Tommy estarão menos voláteis nos próximos quatro meses.
