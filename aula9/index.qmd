@@ -27,6 +27,7 @@ execute:
   echo: TRUE
   message: false
   warning: false
+  restart: true 
 ---
 
 <br>
@@ -207,7 +208,7 @@ Se **$\gamma_1 > 0$**, choques negativos elevam a variância condicional mais do
 O modelo pode ser generalizado para TARCH(p, q) e também combinado com distribuições de erro não normais (como a t de Student), oferecendo ainda mais flexibilidade para modelar a volatilidade condicional.
 
 
-## Estimação de Modelo ARCH no R
+# Estimação de Modelo ARCH no R
 
 ``` {r econ9_1, warning=FALSE, message=FALSE }
 #Direcionado o R para o Diretorio a ser trabalhado
@@ -497,7 +498,7 @@ Na primeira etapa, os critérios devem ser escolhidos:
  
  - `variance.model`: uma lista contendo o tipo do modelo e a ordem do modelo. Note que `sGARCH` significa `standard` e (1,0) define um modelo `ARCH`.
  
- - `distribution.model`: o tipo de distribuição escolhido no model.
+ - `distribution.model`: o tipo de distribuição escolhido no modelo. Neste caso, as opções são: norm (Normal), std (t), ged (Distribuição dos erros generalizada), snorm, sstd e sged, quando se tem assimetria e ghyp (Hiperbólica Generalizada).
  
 Para cada parâmetro existe uma opção definida de acordo com a liteturatura conhecida do modelo, seja a escolha da estimação da média, da variância e da distribuição. Para mais detalhes, é necessário ler a documentação usando `?ugarchespec`.
 
@@ -544,3 +545,507 @@ sigma(archforecast)
 ```   
 
 As previsões são para os próximos 4 meses após o último ponto da amostra. Essa função retorna os desvios padrões condicionais previstos, ou seja, a volatilidade esperada para cada mês futuro. A volatilidade esperada diminui mês a mês. Isso indica que, segundo o modelo ARCH(1), o impacto do último grande choque está se dissipando, e a série deve entrar num período de menor incerteza. Em termos econômicos, você está prevendo que os preços da manga Tommy estarão menos voláteis nos próximos quatro meses.
+
+# Estimação de Modelo ARCH no Python
+
+## Entrada dos dados
+
+```{python econ9_10, warning=FALSE, message=FALSE}
+# Bibliotecas
+import pandas as pd
+import numpy as np
+import plotnine as p9
+from pathlib import Path
+from arch.unitroot import DFGLS
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+import matplotlib.pyplot as plt
+import pmdarima as pm
+from statsmodels.stats.diagnostic import het_arch
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.stats.diagnostic import acorr_ljungbox
+from arch import arch_model
+from scipy.stats import jarque_bera
+import statsmodels.api as sm
+
+# Configuração de precisão nos números
+#pd.set_option("display.precision", 4)
+
+# Caminho do diretório de trabalho
+data_dir = Path("/Users/jricardofl/Dropbox/tempecon/facape/econometria2")
+
+# Load mango price dataset and drop specified columns
+df = (
+    pd.read_csv(data_dir/'dados_manga_tommy_semana.csv', sep=';', decimal='.')
+    .drop(columns=['produto', 'regiao', 'ano', 'semana'])
+)
+
+# Create the date range from 2012-01-07 to today
+date_range = pd.date_range(start='2012-01-01', end=pd.Timestamp.today(), freq='W-SAT')
+
+# Remove the specific dates (53rd weeks)
+dates_to_remove = [pd.Timestamp('2016-12-31'), pd.Timestamp('2022-12-31')]
+date_range = date_range[~date_range.isin(dates_to_remove)]
+date_range = date_range[:len(df)]
+
+# Assign the date range as a new column
+df['date'] = date_range
+# Assign the date range as a new column
+df['date2'] = date_range[:len(df)]
+
+# Set the date as the index
+df = df.set_index('date')
+
+# Carregar o dataset igpdi
+igpdi = (
+    pd.read_csv(data_dir/'igpdi.csv', sep=';', decimal='.')
+    .assign(date=df.index)
+    .drop(columns=['ano', 'semana'])
+    .set_index('date')
+)
+
+# Juntar os DataFrames
+tabela = df.join(igpdi, how='inner')
+
+# Deflacionar a série com data base = último mês observado
+indice_data_base = tabela.query("date == date.max()").igpdi.values[0]
+tabela = tabela.assign(real = lambda x: (indice_data_base / x.igpdi) * x.preco)
+
+# Criação da variável preco_palmer
+dadost = tabela['real']
+```
+
+## Gráfico da série semanal
+
+```{python econ9_11, warning=FALSE, message=FALSE}
+# Visualização de dados
+plot = (
+  p9.ggplot(tabela) +
+  p9.aes(x = "date2", y = "real") +
+  p9.geom_line(colour="blue", size=1.0) +
+  p9.scale_x_date(date_breaks = "2 year", date_labels = "%Y") +
+  p9.labs(
+    title = "Evolução dos Preços de Manga Tommy: 2012 a 2025",
+    subtitle = "Ao produtor do Vale do São Francisco",
+    x = "Semanas",
+    y = "Preços Palmer R$",
+    caption = "Dados: CEPEA reprocessados pelo Observatório de Mercado da Embrapa"
+    )+
+    p9.theme(
+        figure_size=(12, 8)
+        )
+)
+
+plot.show()
+```
+
+
+## Gráfico da Série mensal
+
+
+```{python econ9_12, warning=FALSE, message=FALSE}
+# Criar a série semanal com index já ajustado (já feito anteriormente)
+serie_xts = dadost.copy()  # dadost é a série 'real' deflacionada, com índice semanal (date)
+
+# Agregar por média mensal
+serie_mensal = (
+    serie_xts
+    .resample('ME')
+    .mean()
+    .rename("preco_mensal")
+    .to_frame()
+    .reset_index()
+)
+
+# Visualizar com plotnine
+grafico_mensal = (
+    p9.ggplot(serie_mensal) +
+    p9.aes(x='date', y='preco_mensal') +
+    p9.geom_line(color='darkgreen', size=1) +
+    p9.scale_x_date(date_breaks = "2 year", date_labels = "%Y") +
+    p9.labs(
+        title='Preço Médio Mensal da Manga Tommy - VSF',
+        x='Ano',
+        y='Preço deflacionado (R$)'
+    ) +
+    p9.theme(
+        figure_size=(12, 8)
+        )
+)
+
+grafico_mensal.show()
+```
+
+## Análise da estacionariedade da serie mensal
+
+```{python econ9_13, warning=FALSE, message=FALSE}
+# Plota IPCA, FAC, e FACpa
+fig, axes = plt.subplots(3, 1, figsize=(10, 12))
+
+# Plota IPCA 
+dadost.plot(ax=axes[0], title='Preços Tommy', color='blue')
+axes[0].set_title('Preço Semanal Deflacionado da Manga Tommy - VSF')
+axes[0].set_ylabel('% a.a.')
+
+# Plota FAC
+plot_acf(dadost, ax=axes[1], title='FAC (Função de Autocorrelação)')
+
+# Plota FACp
+plot_pacf(dadost, ax=axes[2], title='FACp (Função de Autocorrelação Parcial)', method='ywm')
+
+plt.tight_layout()
+plt.show()
+```
+
+
+```{python econ9_14, warning=FALSE, message=FALSE}
+# Executa o teste DF-GLS com seleção automática de defasagens
+dfgls_test1 = DFGLS(dadost, lags=None, trend='c') 
+
+# Exibe os resultados
+print(dfgls_test1.summary())
+```
+
+```{python econ9_15, warning=FALSE, message=FALSE}
+# Executa o teste DF-GLS com seleção automática de defasagens
+dfgls_test2 = DFGLS(dadost, lags=None, trend='ct') 
+
+# Exibe os resultados
+print(dfgls_test2.summary())
+```
+
+O Python não tem o teste HEGY de raiz unitária sazonal.
+
+### Estimação do ARIMA no Python com os dados semanais
+
+```{python econ9_16, warning=FALSE, message=FALSE}
+# Série semanal deflacionada (em vez da mensal, já que você decidiu voltar aos dados semanais)
+# Se ainda quiser usar a mensal, substitua `y` por `serie_mensal['preco_mensal']`
+y = tabela['real'].dropna()
+
+# Estimar modelo auto-ARIMA
+#modelo_arima = pm.auto_arima(
+#    y,
+#    start_p=0, start_q=0,
+#    max_p=4, max_q=4,
+#    max_d=1,
+#    seasonal=True,
+#    m=52,  # frequência semanal
+#    max_P=3, max_Q=3, max_D=1,
+#    trace=True,
+#    stepwise=True,
+#    suppress_warnings=True,
+#    information_criterion='aic',
+#    error_action='ignore'
+#)
+
+modelo_sarimax = SARIMAX(
+    y,
+    order=(2, 0, 0),
+    seasonal_order=(3, 0, 0, 52),
+    enforce_stationarity=False,
+    enforce_invertibility=False
+)
+
+
+# Resumo do modelo
+ajuste_modelo = modelo_sarimax.fit(disp=False)
+print(ajuste_modelo.summary())
+```
+
+Em seguida, os resíduos do ARIMA
+
+```{python econ9_17, warning=FALSE, message=FALSE}
+# Obter os resíduos do modelo ajustado
+residuos_arima = ajuste_modelo.resid
+```
+
+```{python econ9_18, warning=FALSE, message=FALSE}
+fig, ax = plt.subplots(2, 1, figsize=(10, 6))
+plot_acf(residuos_arima, lags=40, ax=ax[0])
+plot_pacf(residuos_arima, lags=40, ax=ax[1])
+ax[0].set_title("ACF dos Resíduos do ARIMA")
+ax[1].set_title("PACF dos Resíduos do ARIMA")
+plt.tight_layout()
+plt.show()
+```
+
+```{python econ9_19, warning=FALSE, message=FALSE}
+# Teste com múltiplas defasagens
+ljungbox = acorr_ljungbox(residuos_arima, lags=[10, 20, 30], return_df=True)
+print(ljungbox)
+```
+
+O próximo passo é testar a presença de efeito ARCH nos resíduos
+
+```{python econ9_20, warning=FALSE, message=FALSE}
+# Teste ARCH-LM nos resíduos do ARIMA
+arch_test = het_arch(residuos_arima, maxlag=12)
+
+print(f'Estatística LM: {arch_test[0]:.4f}')
+print(f'p-valor: {arch_test[1]:.4f}')
+```
+
+Apesar de não rejeitar a hipótese nula de ausência de autocorrelação no primeiro Lag, nos lags mais altos se encontrou autocorrelação. Além disso, há heterocedasticidade (teste ARCH significativo) nos resíduos, indicando que o modelo ARCH/GARCH é o melhor caminho a se fazer.
+
+### Escolha do melhor modelo ARCH/GARCH no Python com os dados semanais
+
+```{python econ9_21, warning=FALSE, message=FALSE}
+N = len(residuos_arima)
+modelos = {}
+aicc_values = {}
+
+aicc_values = {}
+modelos = {}
+
+# Benchmark (sem GARCH)
+loglik0 = -0.5 * N * (1 + np.log(2 * np.pi * np.mean(residuos_arima ** 2)))
+aicc_values["modelo0"] = -2 * loglik0 + (2 * 1 * N) / (N - 1 - 1)
+
+# Modelos ARCH puros
+for i in range(1, 4):  # ARCH(1), ARCH(2), ARCH(3)
+    try:
+        modelo = arch_model(residuos_arima, vol='ARCH', p=i)
+        resultado = modelo.fit(disp='off')
+        loglik = resultado.loglikelihood
+        k = i + 1  # número de parâmetros: i + constante
+        aicc = -2 * loglik + (2 * k * N) / (N - k - 1)
+        nome = f"arch0{i}"
+        aicc_values[nome] = aicc
+        modelos[nome] = resultado
+    except Exception as e:
+        print(f"Erro no modelo ARCH(0,{i}): {e}")
+        aicc_values[f"arch0{i}"] = np.nan
+
+# Modelos GARCH
+for p, q in [(1,1), (2,2)]:
+    try:
+        modelo = arch_model(residuos_arima, vol='GARCH', p=p, q=q)
+        resultado = modelo.fit(disp='off')
+        loglik = resultado.loglikelihood
+        k = p + q + 1
+        aicc = -2 * loglik + (2 * k * N) / (N - k - 1)
+        nome = f"garch{p}{q}"
+        aicc_values[nome] = aicc
+        modelos[nome] = resultado
+    except Exception as e:
+        print(f"Erro no modelo GARCH({p},{q}): {e}")
+        aicc_values[f"garch{p}{q}"] = np.nan
+
+# Ordenar e exibir
+aicc_ordenado = dict(sorted(aicc_values.items(), key=lambda item: item[1]))
+print("AICc por modelo:")
+for nome, valor in aicc_ordenado.items():
+    print(f"{nome}: {valor:.4f}")
+```
+
+Assim, o modelo escolhido foi o GARCH 1,1, por ter o menor valor do critério de AIC modificado.
+
+## Estimação do GARCH(1,1)
+
+```{python econ9_22, warning=FALSE, message=FALSE}
+# Estimar o modelo GARCH(1,1)
+modelo_garch11 = arch_model(residuos_arima, vol='Garch', p=1, q=1)
+ajuste_garch11 = modelo_garch11.fit(disp='off')
+
+# Exibir resumo dos resultados
+print(ajuste_garch11.summary())
+```
+
+mu = 0.0531, significativo, indica que há um leve retorno médio nos resíduos, mas o foco do GARCH é a variância condicional. O parametro omega é a constante da variância estimada. O alpha[1] (efeito ARCH) é significativo e o beta[1] (efeito GARCH) também é. O efeito ARCH é para o impacto de choques recentes e o GARCH para a persistência na volatilidade. 
+
+Além disso, a soma alpha + beta = 0.1938 + 0.5292 ≈ 0.723, mostrando persistência moderada, mas inferior a 1, então o processo é estacionário em variância.
+
+
+## Gráfico da variância condicional estimada ao longo do tempo
+
+```{python econ9_23, warning=FALSE, message=FALSE}
+# Criar DataFrame para visualização
+df_vol = pd.DataFrame({
+    "date": pd.date_range(start="2012-01-01", periods=len(residuos_arima), freq="W"),
+    "resid": residuos_arima,
+    "ht": ajuste_garch11.conditional_volatility ** 2
+})
+
+# Gráfico da variância condicional estimada
+grafico = (
+    p9.ggplot(df_vol, p9.aes(x="date", y="ht")) +
+    p9.geom_line(color="#ff9933") +
+    p9.labs(
+        title="Volatilidade estimada pelo modelo GARCH(1,1)",
+        x="Data",
+        y="Variância Condicional"
+    ) +
+    p9.scale_x_date(date_breaks = "2 year", date_labels = "%Y") +
+    p9.theme_minimal() +
+    p9.theme(
+        figure_size=(12, 8)
+    )
+)
+
+grafico.show()
+```
+
+# Análise dos resíduos do GARCH(1,1)
+
+```{python econ9_24, warning=FALSE, message=FALSE}
+# 1. Resíduos padronizados
+residuos_padronizados = ajuste_garch11.std_resid
+
+# 2. ACF e PACF
+fig, ax = plt.subplots(2, 1, figsize=(10, 6))
+plot_acf(residuos_padronizados.dropna(), lags=40, ax=ax[0])
+plot_pacf(residuos_padronizados.dropna(), lags=40, ax=ax[1])
+ax[0].set_title("ACF dos Resíduos Padronizados do GARCH(1,1)")
+ax[1].set_title("PACF dos Resíduos Padronizados do GARCH(1,1)")
+plt.tight_layout()
+plt.show()
+
+# 3. Teste de Ljung-Box
+ljungbox_garch = acorr_ljungbox(residuos_padronizados.dropna(), lags=[10, 20, 30], return_df=True)
+print(ljungbox_garch)
+```
+
+# Melhorar ajuste do GARCH
+
+No primeiro caso, é estimado um modelo GARCH com distribuição t-Student:
+
+```{python econ9_25, warning=FALSE, message=FALSE}
+modelo_t = arch_model(residuos_arima, vol='Garch', p=1, q=1, dist='t')
+ajuste_t = modelo_t.fit(disp='off')
+
+print(ajuste_t.summary())
+```
+
+Neste caso, tem-se nu = 3.25, altamente significativo (p < 0.0001). Isto indica caudas pesadas: a distribuição dos resíduos tem muito mais extremos do que a normal. É uma melhoria substancial em relação ao modelo com distribuição normal.
+
+O AIC foi 508.011, melhor que o GARCH(1,1) com normal (608.424).
+
+```{python econ9_26, warning=FALSE, message=FALSE}
+# 1. Resíduos padronizados do modelo com distribuição t
+residuos_padronizados_t = ajuste_t.std_resid.dropna()
+
+# 2. ACF e PACF
+fig, ax = plt.subplots(2, 1, figsize=(10, 6))
+plot_acf(residuos_padronizados_t, lags=40, ax=ax[0])
+plot_pacf(residuos_padronizados_t, lags=40, ax=ax[1])
+ax[0].set_title("ACF dos Resíduos Padronizados - GARCH(1,1) com t-Student")
+ax[1].set_title("PACF dos Resíduos Padronizados - GARCH(1,1) com t-Student")
+plt.tight_layout()
+plt.show()
+
+# 3. Teste de Ljung-Box
+ljungbox_t = acorr_ljungbox(residuos_padronizados_t, lags=[10, 20, 30], return_df=True)
+print(ljungbox_t)
+```
+
+No segundo caso, é estimado um modelo GARCH com distribuição GED:
+
+```{python econ9_27, warning=FALSE, message=FALSE}
+modelo_ged = arch_model(residuos_arima, vol='Garch', p=1, q=1, dist='ged')
+ajuste_ged = modelo_ged.fit(disp='off')
+
+print(ajuste_ged.summary())
+```
+
+```{python econ9_28, warning=FALSE, message=FALSE}
+residuos_padronizados_ged = ajuste_ged.std_resid.dropna()
+
+ljungbox_ged = acorr_ljungbox(residuos_padronizados_ged, lags=[10, 20, 30], return_df=True)
+print(ljungbox_ged)
+```
+
+Como os residuos tambem não sao ruído branco, a proxima tentativa é estimar um GARCG(2,2)
+
+```{python econ9_29, warning=FALSE, message=FALSE}
+modelo_garch22_ged = arch_model(residuos_arima, vol='Garch', p=2, q=2, dist='ged')
+ajuste_garch22_ged = modelo_garch22_ged.fit(disp='off')
+
+# Exibir resultados
+print(ajuste_garch22_ged.summary())
+
+# Análise dos resíduos
+residuos_padronizados_22ged = ajuste_garch22_ged.std_resid.dropna()
+
+from statsmodels.stats.diagnostic import acorr_ljungbox
+ljungbox_22ged = acorr_ljungbox(residuos_padronizados_22ged, lags=[10, 20, 30], return_df=True)
+print(ljungbox_22ged)
+
+```
+
+# Estimação do TARCH
+```{python econ9_30, warning=FALSE, message=FALSE}
+modelo_gjr_ged = arch_model(residuos_arima, vol='GARCH', p=1, q=1, o=1, dist='ged')
+ajuste_gjr_ged = modelo_gjr_ged.fit(disp='off')
+
+print(ajuste_gjr_ged.summary())
+
+```
+
+```{python econ9_31, warning=FALSE, message=FALSE}
+residuos_padronizados_gjr = ajuste_gjr_ged.std_resid.dropna()
+
+from statsmodels.stats.diagnostic import acorr_ljungbox
+ljungbox_gjr = acorr_ljungbox(residuos_padronizados_gjr, lags=[10, 20, 30], return_df=True)
+print(ljungbox_gjr)
+
+```
+
+## Testes nos resíduos
+
+```{python econ9_32, warning=FALSE, message=FALSE}
+
+# Normalidade
+jb_stat, jb_pvalue = jarque_bera(residuos_padronizados_gjr)
+print(f"Estatística Jarque-Bera: {jb_stat:.4f}")
+print(f"p-valor: {jb_pvalue:.4f}")
+```
+
+```{python econ9_33, warning=FALSE, message=FALSE}
+# Resíduos e variância condicional
+e = ajuste_gjr_ged.resid.dropna()
+ht = ajuste_gjr_ged.conditional_volatility.dropna() ** 2
+
+# Variáveis auxiliares
+sign_bias = (e.shift(1) < 0).astype(int)
+neg_sign_bias = (e.shift(1) < 0).astype(int) * e.shift(1)
+pos_sign_bias = (e.shift(1) >= 0).astype(int) * e.shift(1)
+
+# Regressão auxiliar: verificar se ht depende do sinal do erro anterior
+X = sm.add_constant(pd.DataFrame({
+    'SignBias': sign_bias,
+    'NegBias': neg_sign_bias,
+    'PosBias': pos_sign_bias
+}))
+
+y = ht
+modelo_bias = sm.OLS(y, X, missing='drop').fit()
+
+print(modelo_bias.summary())
+```
+
+## Previsão com o Python
+
+```{python econ9_34, warning=FALSE, message=FALSE}
+# Previsão de 4 períodos à frente com o modelo GJR-GARCH com GED
+forecast_gjr_ged = ajuste_gjr_ged.forecast(horizon=4)
+
+# Extrair a previsão do desvio padrão condicional
+volatilidade_prevista = forecast_gjr_ged.variance.values[-1, :]
+desvio_padrao_previsto = np.sqrt(volatilidade_prevista)
+
+# Mostrar os resultados
+for i, vol in enumerate(desvio_padrao_previsto, start=1):
+    print(f"T+{i}: {vol:.4f}")
+```
+
+# Exemplo de cálculo dos retorno no Python
+
+```{python econ9_35, warning=FALSE, message=FALSE}
+
+y = tabela['real'].dropna()
+
+# Suponha que 'precos' é uma Series de preços com índice de datas
+retornos_log = np.log(y/y.shift(1)).dropna()
+```
+
+
