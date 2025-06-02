@@ -38,7 +38,7 @@ execute:
 
 Na análise univariada de séries temporais o objetivo era, basicamente, entender a dependência dinâmica de uma série $X_{t}$, isto é, a dependência de $X_{t}$ com os seus valores passados $(X_{t-1}, X_{t-2},...)$.
 
-Contudo, existem variáveis que são definidas dentro de um sistema e é um erro modelar estes processos de maneira puramente autorregressiva ou não controlando a dinâmica intertemporal: PIB, Consumo, Investimento, Gastos do Governo são definidos simultaneamente, por exemplo.  
+Contudo, existem variáveis que são definidas dentro de um sistema e pode ser uma simplificação inadequada modelar estes processos de maneira puramente autorregressiva ou não controlando a dinâmica intertemporal: PIB, Consumo, Investimento, Gastos do Governo são definidos simultaneamente, por exemplo.  
 
 Essas questões, bastante pertinentes no dia a dia, são tratadas dentro da **análise multivariada de séries temporais**.
 
@@ -153,7 +153,7 @@ A correlação entre as variáveis é 0.87, bastante elevada.
 
 <br>
 
-Contudo, não é o bastante para se identificar a natureza da relação entre elas. Algumas questões devem ser levadas em consideração. Suponha que as series sejam estacionárias em nível. Pode-se, nesse caso, estimar um **Vetor Autoregressivo (VAR)** de primeira ordem, de modo que: 
+Contudo, não é o bastante para se identificar a natureza da relação entre elas. Algumas questões devem ser levadas em consideração. Suponha que as séries sejam estacionárias em nível. Pode-se, nesse caso, estimar um **Vetor Autoregressivo (VAR)** de primeira ordem, de modo que: 
 
 <br>
 
@@ -175,11 +175,11 @@ $$
 
 O VAR(1) vai descrever a evolução dinâmica da interação entre a FBCF e os desembolsos do BNDES.
 
-O modelo VAR foi desenvolvido por Christopher Sims em um artigo publicado em 1980 na qual se propunha tratar todas as variáveis do sistema simetricamente, sem fazer hipótese sobre a estrutura de correlação entre elas.
+O modelo VAR foi desenvolvido por Christopher Sims (em um artigo publicado em 1980), em que ele se propôs tratar todas as variáveis do sistema como endógenas e simétricas, evitando imposições ex-ante sobre causalidade estrutural.
 
 Uma vez estimado esse modelo, pode-se perguntar se existe causalidade nessa relação, isto é, se os desembolsos do BNDES de fato ajudam a prever a taxa de investimento, se o contrário ocorre ou se há uma simultaneidade. Nesse último caso, diz-se que existe uma causalidade bidirecional.
 
-Para definir o modelo VAR pode-se apresentar uma especificação bivariada simples. A idéia é que não sabendo se há causalidade mútua, se parte de um modelo em que as inovações contemporâneas de um processo afetam o outro.
+Para definir o modelo VAR pode-se apresentar uma especificação bivariada simples. A idéia é que não sabendo se há causalidade mútua, se parte de um modelo em que as inovações contemporâneas (choques que ocorrem no mesmo momento do tempo — ou seja, os efeitos simultâneos entre as variáveis do sistema) de um processo afetam o outro.
 
 <br>
 
@@ -192,11 +192,11 @@ y_{2,t}=\alpha_2-\delta_1y_{1,t}+\beta_2y_{2,t-1}+\beta_1y_{1,t-1}+\epsilon_{2,t
 $$
 <br>
 
-No sistema acima, os termos $y_{1,t}$ e $y_{2,t}$ representam a dinâmica contemporânea, relaxando a hipótese de restrição de *feedback*. 
+No sistema acima, os termos $y_{1,t}$ e $y_{2,t}$ representam a dinâmica contemporânea, relaxando a hipótese de restrição de *feedback*. A restrição de feedback contemporâneo é uma hipótese comum em modelos univariados ou VARs na forma reduzida, onde se supõe que uma variável não pode ser afetada imediatamente (no mesmo período) por outra variável endógena. Ou seja, os efeitos acontecem apenas com defasagem.
 
-O modelo acima está no denominado modelo estrutural, devido a presença do termo contemporâneo no lado direito de cada equação.
+O modelo acima está no denominado modelo estrutural, devido a presença do termo contemporâneo no lado direito de cada equação. A forma estrutural representa o sistema como ele funciona na realidade, incluindo relações simultâneas (contemporâneas) entre as variáveis.
 
-Para colocá-lo na forma reduzida, se escreve o modelo na forma matricial a partir do rearranjo;
+Para colocá-lo na forma reduzida (a forma do modelo que pode ser diretamente estimada com os dados, onde os choques não estão correlacionados com as variáveis explicativas e não se tem os termos contemporâneos), se escreve o modelo na forma matricial a partir do rearranjo;
 
 <br>
 $$
@@ -207,6 +207,7 @@ $$
 $$
 y_{2,t}+\delta_1y_{1,t}=\alpha_2+\beta_2y_{2,t-1}+\beta_1y_{1,t-1}+\epsilon_{2,t}
 $$
+
 <br>
 a partir do qual se obtém:
 <br>
@@ -269,42 +270,53 @@ $$
 
 <br>
 
-a chamada forma reduzida, em que $a=A^{-1}\alpha$, $B=A^{-1}B^*$ e $e_t=A^{-1}\epsilon_t$
+a chamada forma reduzida, em que $a=A^{-1}\alpha$, $B=A^{-1}B^*$ e $e_t=A^{-1}\epsilon_t$. Ela elimina os termos contemporâneos entre variáveis endógenas e é a forma que pode ser estimada diretamente com os dados. Os erros $e_t$ são combinações lineares dos choques estruturais, mas **não têm interpretação causal direta**.
 
-No Modelo VAR todas as variáveis são consideradas endógenas e determinadas de forma dinâmica pelos valores defasados. 
-
-Se tem uma equação para cada variável em função de seus valores defasados e dos valores defasados das outras variáveis. 
+No Modelo VAR todas as variáveis são consideradas endógenas e determinadas de forma dinâmica pelos valores defasados. Se tem uma equação para cada variável em função de seus valores defasados e dos valores defasados das outras variáveis. 
 
 Um VAR tem duas dimensões: 
+
 a) número de variáveis =k; 
-b)número de defasagens =p.
+
+b) número de defasagens =p.
 
 O estimador de MQO pode ser aplicado a cada equação individualmente.
 
-Um modelo VAR precisa ser estável. A estabilidade do VAR é definida pelas suas raízes características. Se o VAR não for estável, não tem sentido ser estimado.
-
-A estabilidade de um VAR pode ser examinada calculando as raízes características de:
-
 <br>
 
+### Estabilidade do Modelo VAR
+
+Um modelo VAR precisa ser estável. A estabilidade de um modelo VAR está associada ao comportamento dinâmico do sistema: se as variáveis retornam ao equilíbrio após um choque. Caso o modelo não seja estável, suas previsões podem divergir ao longo do tempo, tornando a análise inútil do ponto de vista econômico.
+
+A estabilidade é verificada pelas **raízes características** do modelo. Seja o modelo VAR(p):
+
 $$
-(I+B+B^2+ \dots+B^k)y_t=\sum_{i=0}^{\infty}B^i\epsilon_{t-1}
-$$
-<br>
-
-O polinômio característico é definido por 
-
-$$
-\Pi(z)=(I+B+B^2+ \dots+B^k)
+y_t = B_1 y_{t-1} + B_2 y_{t-2} + \dots + B_p y_{t-p} + e_t
 $$
 
-As raízes de $|\Pi(z)|=0$ informarão sobre o processo ser ou não ser estacionário.
+Define-se o **polinômio característico** como:
 
-A condição necessária e suficiente para a estabilidade do VAR é que todas as raízes características estejam fora do círculo unitário.
+$$
+\Pi(z) = I - B_1 z - B_2 z^2 - \dots - B_p z^p
+$$
 
-Estacionariedade e estabilidade são duas propriedades fortemente relacionadas. No caso de modelos VAR, tal relação se dá pelo fato de que modelos VAR estáveis são sempre estacionários.
+A **condição necessária e suficiente** para a estabilidade do VAR é que **todas as raízes do determinante $|\Pi(z)| = 0$ estejam fora do círculo unitário**, ou seja:
 
-A negativa dessa informação não é verdadeira. Contudo, processos instáveis não tem interesse econômico.
+$$
+|z| > 1
+$$
+
+Isso garante que a solução do sistema VAR possa ser representada como uma função convergente de choques passados:
+
+$$
+y_t = \sum_{i=0}^{\infty} \Phi_i e_{t-i}
+$$
+
+onde os coeficientes $\Phi_i$ vão decaindo ao longo do tempo.
+
+ **Importante**: modelos VAR estáveis são sempre estacionários. No entanto, o inverso nem sempre é verdadeiro — especialmente no caso de modelos com cointegração, em que há uma forma estacionária para combinações lineares das variáveis (VECM).
+
+A verificação empírica das raízes pode ser feita com o comando `roots()` no R (pacote `vars`), que informa os módulos das raízes do polinômio $\Pi(z)$.
 
 Considere o modelo abaixo:
 
@@ -423,31 +435,41 @@ Estes processos não apresentam dinâmica comum, tendem a se descolar. É dito i
 
 <br>
 
-### Determinação da ordem de defasagem
+### Determinação da Ordem de Defasagem
 
-<br>
+Uma vez que temos nossos dados devidamente tratados, o próximo passo é determinar a ordem $p$ de defasagem do modelo VAR. Essa escolha é feita com base em **critérios de informação**, que equilibram a qualidade do ajuste do modelo com sua complexidade.
 
-Uma vez de posse dos nossos dados, já devidamente tratados, um problema imediato é determinar a ordem $p$ de defasagem do nosso modelo. Isso é feito empiricamente pela análise de **critérios de informação**. Os mais conhecidos são os critérios de Akaike, Hannan-Quinn e Schwarz, sendo determinado como se segue:
+Os critérios mais utilizados são:
+
+- **AIC** (Critério de Akaike)
+- **HQ** (Critério de Hannan-Quinn)
+- **SC** (Critério de Schwarz ou BIC)
+
+Esses critérios são calculados da seguinte forma:
 
 $$
-AIC(p) = log det (\Sigma_{u}(p)) + \frac{2}{T} p K^{2}
+AIC(p) = \log \det (\Sigma_{u}(p)) + \frac{2}{T} p K^{2}
 $$ 
 
 $$
-HQ(p) = log det (\Sigma_{u}(p)) + \frac{2log(log(T))}{T} p K^{2}
+HQ(p) = \log \det (\Sigma_{u}(p)) + \frac{2 \log(\log(T))}{T} p K^{2}
 $$
 
 $$
-SC(p) = log det (\Sigma_{u}(p)) + \frac{log(T)}{T} p K^{2} 
+SC(p) = \log \det (\Sigma_{u}(p)) + \frac{\log(T)}{T} p K^{2}
 $$
-onde $\Sigma_{u}(p) = T^{-1}\sum_{t=1}^{T} \hat{u_{t}} {\hat{u}_{t}}'$.
-No R esses critérios estão implementados na função `VARselect` do pacote `vars`.
 
-<br>
+onde:
+
+- $\Sigma_u(p) = \frac{1}{T} \sum_{t=1}^{T} \hat{u}_t \hat{u}_t'$ é a matriz de variância-covariância dos resíduos estimados;
+- $K$ é o número de variáveis do sistema VAR;
+- $T$ é o número de observações (ajustado pelas defasagens utilizadas).
+
+Em termos práticos: quanto menor o valor do critério, melhor o modelo segundo esse critério.
+
+No R, esses critérios estão implementados na função `VARselect()` do pacote `vars`, conforme o exemplo abaixo:
 
 A determinação do lag é dada por:
-  
-<br>
 
 ``` {r econ10_4, warning=FALSE, message=FALSE }
 # Estruturação dados com como um objeto "ts" e ajuste em um modelo VAR.
@@ -459,9 +481,7 @@ VARselect(data, lag.max = 6, type = "none")
 
 <br>
   
-A primeira parte da saída indica o número ótimo de defasagens para cada critério, seguido pela tabela com o valor de cada um para cada defasagem.
-
-A melhor defasagem é dada pelo menor valor do critério. Isto é tudo que se precisa para estimar um modelo VAR.
+A primeira parte da saída indica o número ótimo de defasagens para cada critério, seguido pela tabela com o valor de cada um para cada defasagem. A melhor defasagem é dada pelo menor valor do critério. Isto é tudo que se precisa para estimar um modelo VAR.
 
 <br>
   
@@ -478,6 +498,31 @@ O modelo VAR (1) estimado pelo método dos Mínimos Quadrados Ordinários é:
 (model1 <- VAR(data, p = 1, type = "none"))
 ```
 
+O resultado da estimação apresenta uma equação para cada variável do sistema:
+
+#### Equação para `$y_1$`:
+
+$$
+\hat{y}_{1,t} = 0{,}6805 \cdot y_{1,t-1} + 0{,}1867 \cdot y_{2,t-1} + \hat{u}_{1,t}
+$$
+
+#### Equação para `$y_2$`:
+
+$$
+\hat{y}_{2,t} = 0{,}4113 \cdot y_{1,t-1} + 0{,}2308 \cdot y_{2,t-1} + \hat{u}_{2,t}
+$$
+
+Os coeficientes estimados são próximos dos valores verdadeiros utilizados na simulação, que foram:
+
+$$
+A_{\text{simulado}} =
+\begin{bmatrix}
+0{,}7 & 0{,}2 \\
+0{,}4 & 0{,}3
+\end{bmatrix}
+$$
+
+Isso mostra que o estimador dos Mínimos Quadrados Ordinários (MQO), aplicado a cada equação do sistema, recupera bem os parâmetros populacionais em uma amostra grande.
 <br>
 
 Abaixo são apresentados os testes de autocorrelação, o de heterocedasticidade e os autovalores para verificar a estabilidade. 
@@ -505,120 +550,56 @@ points(autoval, Im(autoval),pch=19)
 legend(-2.0,-1.5,legend="Autovalores",pch=19)
 ```
 
+
+Como o p-valor é maior que 0,05, não rejeita-se a hipótese nula de ausência de autocorrelação dos resíduos. Ou seja, os resíduos se comportam como ruído branco — o modelo parece bem ajustado nesse aspecto.
+
+O p-valor alto indica que não há evidência de heterocedasticidade nos resíduos — ou seja, as variâncias dos erros parecem constantes ao longo do tempo.
+
+Sobre a estabilidade, como ambas raízes estão dentro do círculo unitário (isto é, $<1$), o modelo VAR(1) é estável, e suas soluções convergem com o tempo. Isso garante que a dinâmica do sistema converge ao longo do tempo e permite realizar previsões e análise de impulso-resposta com segurança.
+
 <br>
 
 ### Função Impulso Resposta
 
 <br>
 
-Como visto, a modelagem VAR procura identificar a relação dinâmica existente em um conjunto previamente definido de variáveis.
+Como visto, a modelagem VAR procura identificar a relação dinâmica existente em um conjunto previamente definido de variáveis. Dentro dessa estrutura, é possível analisar o efeito de um **choque** em uma variável sobre as demais.
 
-Dentro desse tipo de abordagem, pode ser interessante para o pesquisador verificar o impacto de um **choque** ou **impulso** em uma variável sobre as outras.
+Esse exercício é conhecido como **análise de impulso-resposta**. A ideia é verificar a resposta da variável $y_{i,t+s}$ a uma mudança unitária (impulso) em $y_{j,t}$. Em outra palavras, aplica-se um choque de uma unidade em $y_j$ no tempo $t$ e observa-se a trajetória de resposta de $y_i$ ao longo do tempo $t+s$.
 
-Esse tipo de exercício é conhecido na literatura como **análise de impulso-resposta**. A ideia é verificar a resposta esperada na variável $y_{i,t+s}$ da mudança em uma unidade na variável $y_{j,t}$.
-
-Em outras palavras, dá-se um choque em $t$ na variável $y_{j}$ e observa-se o efeito desse choque sobre a variável $y_{i}$ ao longo de $t+s$. Esses efeitos, ademais, podem ser acumulados.
-
-<br>
-
-Considere as equações já vistas anteriormente
-
-<br>
+Considere novamente o sistema:
 
 $$
-y_{1,t}=\alpha_1-\delta_2y_{2,t}+\beta_1y_{1,t-1}+\beta_2y_{2,t-1}+\epsilon_{1,t}
+y_{1,t} = \alpha_1 - \delta_2 y_{2,t} + \beta_1 y_{1,t-1} + \beta_2 y_{2,t-1} + \epsilon_{1,t}
 $$
 
-<br>
-
 $$
-y_{2,t}=\alpha_2-\delta_1y_{1,t}+\beta_2y_{2,t-1}+\beta_1y_{1,t-1}+\epsilon_{2,t}
+y_{2,t} = \alpha_2 - \delta_1 y_{1,t} + \beta_2 y_{2,t-1} + \beta_1 y_{1,t-1} + \epsilon_{2,t}
 $$
 
-<br>
-
-Se forem reescritas na forma matriz como um processo de médias móveis, tem-se
-
-<br>
+Esse sistema pode ser reescrito na forma de médias móveis:
 
 $$
-\left[\begin{array}{c}
-	y_1 \\
-	y_2
-	\end{array}\right]_t =  \left[\begin{array}{c}
-	\bar{y}_1  \\
-	\bar{y}_2 
-	\end{array}\right] \sum_{i=0}^{\infty}B^i +\left[\begin{array}{c}
-	\epsilon_1 \\
-	\epsilon_2
-	\end{array}\right]_{t-1}
-$$
-Como o termo de erro é dado por
-
-$$
-\left[\begin{array}{c}
-	e_1 \\
-	e_2
-	\end{array}\right]_{t-1}= 	\frac{1}{1-\delta_1\delta_2}\left[\begin{array}{cc}
-	1 & -\delta_1\\
-	-\delta_2 & 1
-	\end{array}\right]\left[\begin{array}{c}
-	\epsilon_1 \\
-	\epsilon_2
-	\end{array}\right]_{t-1}
+y_t = \bar{y} + \sum_{i=0}^{\infty} \Phi_i \epsilon_{t-i}
 $$
 
-<br>
-
-Se tem 
-
-
-<br>
+Onde $\Phi_i$ são as matrizes contendo os coeficientes de impulso-resposta:
 
 $$
-\left[\begin{array}{c}
-	y_1 \\
-	y_2
-	\end{array}\right]_t =  \left[\begin{array}{c}
-	\bar{y}_1  \\
-	\bar{y}_2 
-	\end{array}\right]+ \frac{1}{1-\delta_1\delta_2}\sum_{i=0}^{\infty}B^i \left[\begin{array}{cc}
-	1 & -\delta_1\\
-	-\delta_2 & 1
-	\end{array}\right]\left[\begin{array}{c}
-	\epsilon_1 \\
-	\epsilon_2
-	\end{array}\right]_{t-1}
-$$
-<br>
-
-Que pode ser rearranjado para 
-
-$$
-	\left[\begin{array}{c}
-	y_1 \\
-	y_2
-	\end{array}\right]_t =  \left[\begin{array}{c}
-	\bar{y}_1  \\
-	\bar{y}_2 
-	\end{array}\right]+ \sum_{i=0}^{\infty} \left[\begin{array}{cc}
-	\phi_{1,1}(i) & \phi_{1,2}(i)\\
-	\phi_{2,1}(i) & \phi_{2,2}(i)
-	\end{array}\right]\left[\begin{array}{c}
-	\epsilon_1 \\
-	\epsilon_2
-	\end{array}\right]_{t-1}
+\Phi_i =
+\begin{bmatrix}
+\phi_{1,1}(i) & \phi_{1,2}(i) \\
+\phi_{2,1}(i) & \phi_{2,2}(i)
+\end{bmatrix}
 $$
 
-Onde cada $\phi_{i,j}$ é uma função de impulso-resposta e seu gráfico é uma maneira prática de visualizar o comportamento de choques entre as variáveis do modelo. 
+Cada elemento $\phi_{i,j}(s)$ representa o efeito de um choque unitário na variável $j$ no tempo $t$ sobre a variável $i$ no tempo $t + s$.
 
-Em modelos estáveis, espera-se que as respostas a esses choques, que chamam impulsos, convirjam para zero em tempo finito, preferencialmente em poucos lags.
+O valor $\phi_{i,j}(0)$ representa o **efeito imediato** (resposta contemporânea), e é conhecido como o **multiplicador de impacto**.
 
-Vale observar que $\phi_{i,j}(0)$, a resposta instantânea, é chamado de multiplicar de choque.
+Se o modelo for estável, as respostas ao choque devem convergir para zero com o passar do tempo.
 
-O gráfico de $\phi_{i,j}(t)$ é formado por uma sequência de valores de tempo (i.e, t=0,1,2,...,n) assumindo na ultima equação do slide anterior que $e_t=1$.
-
-Dessa maneira, a interpretação se inicia assumindo um choque de uma unidade na variável j, com a respectiva resposta na variável "i" dada pelo comportamento gráfico.
+Na prática, os gráficos de impulso-resposta são usados para visualizar essas respostas, e cada linha do gráfico representa a sequência:
 
 <br>
 
@@ -726,6 +707,31 @@ box()
 mtext("95% Bootstrap CI, 100 runs", side=1, line = 3)
 ```
 
+
+### Interpretação do Gráfico de Impulso-Resposta
+
+O gráfico apresenta as respostas dinâmicas das variáveis $y_1$ e $y_2$ a choques unitários em cada uma delas.
+
+- Um **choque em $y_1$** gera forte resposta imediata em $y_1$, com decaimento gradual (característica de um processo autoregressivo com inércia).  
+- Esse choque também afeta positivamente $y_2$, com efeito significativo no curto prazo.
+
+- Um **choque em $y_2$** afeta a própria variável com impacto menor e mais transitório.  
+- Esse mesmo choque impacta $y_1$ de forma moderada e de curta duração.
+
+A análise mostra que $y_1$ exerce maior influência sobre $y_2$ do que o contrário, sugerindo assimetria na relação dinâmica entre as variáveis.
+
+No caso da função impulso resposta acumulada, mostra o efeito total acumulado de um choque ao longo do tempo. Enquanto a FIR normal mostra o impacto em cada período, a acumulada mostra a soma dos efeitos até aquele ponto no tempo.
+
+A interpretação diz que a) Um **choque em $y_1$** tem Efeito acumulado de cerca de **5 unidades sobre $y_1$** e Efeito acumulado de cerca de **4 unidades sobre $y_2$**.
+
+Isso indica que $y_1$ tem **impacto persistente e relevante** sobre o sistema como um todo.
+
+b) Um **choque em $y_2$** tem Efeito acumulado de cerca de **1 unidade sobre $y_1$** e Efeito acumulado de cerca de **1,5 unidade sobre $y_2$**.
+
+Assim, $y_2$ afeta as variáveis com **menor intensidade e persistência**.
+
+Em sistemas VAR estáveis, as respostas acumuladas tendem a se estabilizar ao longo do tempo. Isso é o que observamos no gráfico: os efeitos crescem rapidamente nos primeiros períodos e se estabilizam após cerca de 20 períodos.
+
 <br>
 
 ### Decomposição da variância
@@ -751,9 +757,16 @@ fevd.model1 <- fevd(model1, n.ahead = 7)
 plot(fevd.model1, main="")
 ```
 
-<br>
+- Para a variável $y_1$:
+  - Praticamente **100% da variância do erro de previsão** é explicada por choques em $y_1$ ao longo de todo o horizonte.
+  - Isso indica que $y_1$ é altamente autoregressiva e praticamente **independente de $y_2$**.
 
-Os choques em $y_1$ afetam mais $y_1$ do que $y_2$. Já no caso de choque em $y_2$, tem bastante efeito em $y_1$.
+- Para a variável $y_2$:
+  - Inicialmente, $y_2$ explica a maior parte de sua própria variância.
+  - Com o passar do tempo, a **importância dos choques em $y_1$ aumenta**, chegando a representar mais da metade da variância de $y_2$.
+  - Isso reforça que $y_1$ **tem um papel dominante** na dinâmica do sistema.
+
+A Decomposição da variância é uma ferramenta complementar à análise de impulso-resposta, pois permite quantificar a importância relativa de cada variável no comportamento futuro das demais.
 
 <br>
 
