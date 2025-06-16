@@ -1,0 +1,696 @@
+---
+title: "Aula 11 - Econometria de Séries Temporais"
+author: "João Ricardo F. de Lima"
+date: "today"
+editor: source
+lang: pt
+language: 
+  toc-title-document: '<a href="https://www.facape.br/" target="_blank"><img src="https://github.com/econfacape/macroeconometria/blob/main/logofacape.jpg?raw=true" alt="Logotipo Facape" width="150"></a>'
+format: 
+  html:
+    toc: true
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+    toc-location: left
+    code-fold: false
+    embed-resources: true
+    page-layout: full
+    fig-width: 12
+    fig-height: 6
+    fig-align: center
+    df-print: paged
+    fontsize: 13pt
+theme:
+  light: flatly
+execute:
+  echo: TRUE
+  message: false
+  warning: false
+  restart: true 
+---
+
+<br>
+
+# VEC - Vetorial Autorregressivo com correção de erro
+
+<br>
+
+Um dos pressupostos para se estimar um modelo VAR é que as variáveis sejam estacionárias. Isso significa que se essa hipótese for violada, é necessário realizar outro tipo de análise, verificando a existência de **cointegração** entre duas ou mais variáveis, isto é, se existe uma relação de longo-prazo entre elas. 
+
+Se as séries não forem estacionárias, ainda assim pode existir uma relação entre elas ao longo do tempo. Nesse caso, diz-se que as séries possuem uma tendência comum, o que permite investigar uma possível cointegração e, assim, avaliar a existência de uma relação de longo prazo entre elas.
+
+Sejam $Y_t$, $X_t$ e $Z_t$ três séries temporais e a seguinte relação de interesse:
+
+<br>
+
+$$
+Y_t=\alpha+\beta X_t+ \gamma Z_t + \epsilon_t
+$$  
+<br>
+
+Neste caso tem que se considerar as seguintes possibilidades:
+
+a) Se $Y_t$, $X_t$ e $Z_t$ são estacionárias, estima-se a equação acima em nível 
+
+b) Se $Y_t$, $X_t$ e $Z_t$ são não estacionárias, tem-se outras possibilidades:
+
+Se $Y_t$, $X_t$ e $Z_t$ são não estacionárias mas co-integradas, deve-se estimar um Modelo de Correçao de Erro (MCE) na forma uni ou multivariada dado por
+
+<br>
+
+$$
+\Delta Y_t=\alpha+\beta \Delta X_t+ \gamma \Delta Z_t +\lambda \hat{\epsilon}_{t-1}+u_t
+$$
+<br>
+
+em que $\hat{\epsilon}_{t-1}$ são os resíduos da primeira equação mostrada.
+
+Se $Y_t$, $X_t$ e $Z_t$ são não estacionárias e não co-integradas, deve-se ajustar a primeira equação em primeiras diferenças, ou seja,
+
+<br>
+
+$$
+\Delta Y_t=\alpha+\beta \Delta X_t+ \gamma \Delta Z_t + v_t
+$$
+<br>
+
+## Co-integração - Relações de Equilíbrio de Longo Prazo
+
+<br>
+
+As séries $Y_{1t}, Y_{2t}, Y_{3t}, \dots,Y_{kt}$ são **cointegradas de ordem (d, b)** se todas forem integradas de ordem $d$, ou seja, $I(d)$, e existir uma combinação linear dessas variáveis que seja integrada de ordem $(d-b)$, com $0 \leq b \leq d$.
+
+Essa combinação linear é dada por:
+
+$$
+Z_t = a_1Y_{1t} + a_2Y_{2t} + a_3Y_{3t} + \dots + a_kY_{kt}
+$$
+
+O vetor $a = [a_1 \quad a_2 \quad a_3 \quad \dots \quad a_k]'$ é chamado de **vetor de cointegração**. 
+
+O caso de maior interesse na análise econômica ocorre quando essa combinação linear é estacionária, ou seja, $I(0)$.
+
+Considere $Y_t \sim I(1)$, $X_t \sim I(1)$ e $Z_t \sim I(1)$, com a seguinte relação de equilíbrio:
+
+$$
+Y_t = \beta_0 + \beta_1 X_t + \beta_2 Z_t
+$$
+
+Essa relação estará em **equilíbrio de longo prazo** se:
+
+$$
+0 = Y_t - \beta_0 - \beta_1 X_t - \beta_2 Z_t
+$$
+
+Ou seja, para que o equilíbrio tenha significado econômico, o resíduo dessa equação deve ser estacionário.
+
+Assim, se:
+
+$$
+\epsilon_t = Y_t - \beta_0 - \beta_1 X_t - \beta_2 Z_t \sim I(0)
+$$
+
+então as três séries são cointegradas, com vetor de cointegração dado por:
+
+$$
+\beta = [1 \quad -\beta_0 \quad -\beta_1 \quad -\beta_2]'
+$$
+
+
+## Vetores de Cointegração
+
+Os vetores de cointegração não são únicos — podem existir várias combinações lineares que tornam as séries estacionárias. O número máximo de vetores de cointegração depende do número de variáveis envolvidas:
+
+- **Caso com 2 variáveis**: existe no máximo **1 vetor de cointegração**, representando uma única relação de equilíbrio de longo prazo;
+
+- **Caso com $k$ variáveis**: podem existir até **$k - 1$ vetores de cointegração linearmente independentes**.
+ 
+
+<br>
+
+## Rank de Co-integração
+
+<br>
+
+O rank de CI (r) é o número de vetores de CI linearmente independentes. Para k variáveis de mesma ordem de integração e co-integradas, $1 \le r \le k-1$.
+
+<br>
+
+## Testes de Co-Integração - Caso Multivariado
+
+<br>
+
+Para se testar co-integração no caso Multivariado, suponha K variáveis todas integradas de mesma ordem I(1). Sendo as variáveis todas I(1), a existência de combinações lineares I(0) entre elas indica que estas variáveis são co-integradas.  Estas combinações lineares governam o comportamento de equilíbrio de longo prazo. Em geral, existem $r\le K-1$ combinações lineares independentes que são as relações de CI e é necessário encontrar o valor de r;  
+
+Se r=K as variáveis são I(0). Se r=0, não existe relação de longo prazo entre as variáveis. Se $1 \le r \le k-1$, existem de 1 até k-1 vetores de co-integração e é necessário definir o valor de r. 
+
+A metodologia para se determinar o número de vetores de CI e estimar as relações de CI é baseada na estimação de um **Modelo Vetorial Autorregressivo** conhecido como modelo VAR, que foi desenvolvida por Johansen.
+
+<br>
+
+### Teste de Co-Integração de Johansen
+
+<br>
+
+Considere um VAR(2) com k variáveis, todas possuindo raiz unitária:
+
+<br>
+
+$$
+Y_t=\alpha+\theta_1Y_{t-1}+\theta_2Y_{t-2}+\epsilon_t
+$$
+
+<br>
+
+É possível subtrair $Y_{t-1}$ dos dois lados nesta equação e rearranjar os termos para obter: 
+
+<br>
+
+$$
+\Delta Y_t=\alpha+(\theta_1+\theta_2-I)Y_{t-1}-\theta_2 \Delta y_{t-1}+\epsilon_t
+$$
+<br>
+
+com um pouco mais de álgebra é possível reescrever um VAR(p) com k variáveis como um VEC (VAR Reparametrizado) da forma
+
+<br>
+
+$$
+\Delta Y_t=\alpha+\Pi Y_{t-1}+ \sum_{i=1}^{p-1}\Gamma_i\Delta y_{t-i}+\epsilon_t
+$$
+
+em que
+
+$$
+\Pi=\sum_{j=1}^{p}\theta_j-I
+$$
+
+e  
+
+$$
+\Gamma_i=- \sum_{j=i+1}^{p}\theta_j
+$$
+<br>
+
+$\Pi$ é a matriz dos coeficientes das relações de cointegração; $\Gamma$ é a matriz dos coeficientes da variável $Y$ diferenciada defasadas.
+
+A diferença do VEC para o VAR é o termo de correção de erro $\Pi Y_{t-1}$. Engle e Granger (1987) mostraram que $\Pi$ tem rank r, $0 \le r <K$, em que r é o número de vetores de cointegração linearmente independentes entre os elementos do vetor $Y_t$.  Assim, não se pode simplesmente estimar um VAR em $\Delta Y_t$ quando existe relações de cointegração pois se estaria omitindo $\Pi Y_{t-1}$. Se não existem relações de cointegração entre os elementos de $Y_t$, o rank de $\Pi$ é 0 e o termo $\Pi Y_{t-1}$ desaparece.
+
+Se rank $(\Pi)=r<k$, pode-se mostrar que existem matrizes $\psi_{kxr}$ e $\beta_{kxr}$ tais que
+
+<br>
+
+$$
+\Pi_{KxK}=\psi_{kxr} \beta_{rxk}'
+$$
+
+<br>
+
+Substituindo na equação do VAR reparametrizado, obtém-se
+
+<br>
+
+$$
+\Delta Y_t=\alpha+ \psi \beta'Y_{t-1}+\sum_{i=1}^{p-1}\Gamma_i\Delta y_{t-i}+\epsilon_t
+$$
+
+<br>
+
+que é denominado de **Modelo de Correção de Erro Vetorial (VEC)**. O VEC, então, é um VAR (reparametrizado) com as restrições de co-integração entre as variáveis. 
+
+Tem-se que
+
+1) $\beta'Y_{t-1}$= são as ``r'' relações de cointegração que definem o equilíbrio de longo prazo ente as variáveis;
+
+2) $\psi$=matriz de coeficientes de ajustamento de longo prazo;
+
+3) $\Gamma_i$=matrizes de coeficientes que definem a dinâmica de curto prazo;  
+
+
+O procedimento de Johansen consiste em testar o número de raízes características diferentes de zero na matriz $\Pi$ que corresponde ao número de relações e vetores de cointegração entre as variáveis.
+
+
+São utilizados dois testes:
+
+1. **Teste do Traço**:
+
+$H_0:r \le r_0$ 
+
+$H_1:r_0<r \le k$
+
+Estatística de teste:
+
+$$
+\lambda_{traco}=-T \sum_{i=r_0+1}^{k} ln(1-\hat{\lambda_i})
+$$
+
+2. **Teste da Raiz Característica Máxima**:
+
+$H_0:r \le r_0$
+
+$H_1:r=r_0+1$
+
+Estatística de teste:
+
+$$
+\lambda_{max}=-T ln(1-\hat{\lambda_{r_0+1}})
+$$
+
+Os testes são realizados em sequencia até que a hipótese nula não seja rejeitada.
+
+<br>
+
+# Exemplo 1
+
+<br>
+Considere 3 processos simulados, sendo dois AR(1) e um passeio aleatório.
+
+``` {r aula12_1, warning=FALSE, message=FALSE}
+set.seed(9)
+
+e1 <- rnorm(250,0,0.5) 
+e2 <- rnorm(250,0,0.5) 
+e3 <- rnorm(250,0,0.5) 
+
+u1.ar1 <- arima.sim(model = list(ar=0.75), innov = e1, n = 250)
+u2.ar1 <- arima.sim(model = list(ar=0.3), innov = e2, n = 250)
+
+y3 <- cumsum(e3)
+y1 <- 0.8*y3 + u1.ar1
+y2 <- -0.3*y3 + u2.ar1
+
+
+y.mat <- data.frame(y1,y2,y3)
+
+# Figura 8.8 
+plot.ts(y1, lty = 1, ylim = c(-3,7), ylab = "")
+lines(y2, lty = 2)
+lines(y3, lty = 4)
+```
+<br>
+
+
+A função do R ca.jo() estima as matrizes $\alpha$ e $\beta$, além das estatísticas de teste para os dois métodos. 
+
+A estimação do VEC é feita em duas etapas, na primeira se estima, por máxima verossimilhança, as relações de cointegração, e em seguida, com mínimos quadrados, os coeficientes dos termos determinísticos e de defasagem.
+
+Nos resultados, $r=0$ equivale a hipótese de não existência de relações de cointegração, enquanto $r \leq i$ equivale à de i ou menos relações de cointegração.
+
+Abaixo, a saída do teste do máximo autovalor:
+
+
+``` {r aula12_2, warning=FALSE, message=FALSE}
+library(vars)
+vecm <- ca.jo(y.mat, type = c("eigen"), ecdet = "const")
+
+jo.results <- summary(vecm)
+jo.results
+
+vect <- ca.jo(y.mat, type = c("trace"), ecdet = "const")
+
+jo.results <- summary(vect)
+jo.results
+
+
+```
+
+Observe que as estatísticas de teste rejeitam as duas hipóteses nulas iniciais ($r=0$ e $r \leq 1$) a 1\% de significância. Como se tem três variáveis, haverá no máximo 2 vetores de cointegração.
+
+Resultado semelhante foi encontrado na estatística do traço. 
+
+Por padrão, a saída mostra tambem os vetores de cointegração normalizados para a primeira variável, uma transformação proposta por Johansen. 
+
+<br>
+
+Para se estimar os demais coeficientes do modelo se utiliza a função cajorls() com base na quantidade de relações de cointegração. 
+
+``` {r aula12_3, warning=FALSE, message=FALSE}
+
+vecm.r2 <- cajorls(vecm, r = 2)
+vecm.r2
+```
+
+A saída da função retorna não só os vetores com as relações de longo prazo (beta), assim como a matriz de coeficientes do modelo (rlm) e os termos de ajuste (ect), componentes de alpha.
+
+Na seção correspondente aos vetores de cointegração (beta), se tem duas colunas, cada uma com um vetor de cointegração. Como estão normalizados, pode-se facilmente encontrar a contrapartida com os coeficientes do processo gerador.
+
+<br>
+
+# Exemplo 2 - Análise de Preços de Boi Gordo
+
+``` {r aula12_4, warning=FALSE, message=FALSE}
+#Direcionado o R para o Diretorio a ser trabalhado
+setwd('/Users/jricardofl/Dropbox/tempecon/facape/econometria2')
+
+#Limpa o Ambiente Global
+rm(list=ls())
+
+#Inicio do Script
+#Pacotes a serem utilizados
+#library(BMR)
+library(vars)
+library(urca)
+library(forecast)
+library(zoo)
+library(xts)
+library(lmtest)
+library(imputeTS)
+library(ggfortify)
+library(aod)
+
+#library(devtools)
+#install_github("kthohr/BMR")
+
+#Leitura dos Dados
+#Boi Gordo em Goias, Sao Paulo e Minas Gerais
+dados <- ts(read.csv2('boigordo.csv', header = T,
+                      sep=',', dec='.')[,-1],
+            start=c(1999,01), freq=12)
+dates <- seq(as.Date('1999-01-01'), as.Date('2011-05-01'),
+             by='1 month')
+#gtsplot(dados, dates=dates)
+plot(dados)
+```
+
+Resolução do problema de dados faltando com Filtro de Kalman para a série de preços de MG
+
+``` {r aula12_5, warning=FALSE, message=FALSE}
+dados <-na_kalman(dados)
+plot(dados)
+```
+
+``` {r aula12_6, warning=FALSE, message=FALSE}
+#Analise da Estacionariedade das series
+#Teste de Raiz Unitaria na Serie
+#Verificacao da Estacionariedade das series
+#Teste de raiz unitaria DF-GLS
+#Definicao do numero maximo de lags
+print(12*(length(dados)/100)^(1/4))
+
+#Estatistica de Teste DFGLS para Pre?o de Goias
+goT.dfgls <- ur.ers(dados[,1], type = c("DF-GLS"),
+                      model = c("trend"),
+                      lag.max = 12)
+summary(goT.dfgls)
+
+#Estatistica de Teste DFGLS para Pre?o de S?o Paulo
+spT.dfgls <- ur.ers(dados[,2], type = c("DF-GLS"),
+                    model = c("trend"),
+                    lag.max = 12)
+summary(spT.dfgls)
+
+#Estatistica de Teste DFGLS para Pre?o de Minas Gerais
+mgT.dfgls <- ur.ers(dados[,3], type = c("DF-GLS"),
+                    model = c("trend"),
+                    lag.max = 13)
+summary(mgT.dfgls)
+
+```
+
+Os resultados para as três séries indicam a presença de raiz unitária, ou seja, não sao estacionárias em nível. 
+ 
+Como pode ser visto abaixo, todas ficam estacionárias na primeira diferença.
+ 
+``` {r aula12_6a, warning=FALSE, message=FALSE}
+ # Número de diferenças para tornar a série estacionária
+
+feasts::unitroot_ndiffs(dados[, "GO"])
+feasts::unitroot_ndiffs(dados[, "SP"])
+feasts::unitroot_ndiffs(dados[, "MG"])
+
+```
+
+Com isto, se pode estimar um modelo VEC se além de integradas de mesma ordem e não estacionárias em nível, as variáveis forem cointegradas. 
+
+Abaixo estão os resultados do teste do Traço e do Máximo Autovalor.
+
+``` {r aula12_7, warning=FALSE, message=FALSE}
+#Determinacao do lag da Defasagem
+#VARselect(dados, lag.max = 6, season=12, type='trend')$selection
+var<-VARselect(dados, lag.max = 6, season=12, type='trend')
+var
+nlags<-var$selection["SC(n)"]
+#pelo resultado, pode-se considerar um VAR(1).
+
+# Teste de Cointegracao - Maximo Autovalor
+teste.coint <- ca.jo(dados, type='eigen', K=2, ecdet='const',
+                  spec='longrun')
+
+#Resultado para cada Vetor de Co-integracao
+#teste.coint@teststat[1] #H0: r=2 nao pode ser rejeitado
+#teste.coint@teststat[2] #H0: r=1 nao pode ser rejeitado
+#teste.coint@teststat[3] #H0: r=0 nao pode ser rejeitado
+#teste.coint@cval
+
+#Outra opcao para receber todos os resultados do Teste de CI
+summary(teste.coint)
+```
+
+A interpretação da saída acima é que rejeita-se a hipótese $r = 0$ (nenhuma cointegração), ou seja,  existe pelo menos 1 vetor de cointegração.
+
+Não rejeita $r \leq 1$, ou seja, não há evidência para 2 ou mais vetores.
+
+O teste indica 1 vetor de cointegração entre as variáveis GO, SP e MG.
+
+O vetor de cointegração que importa é o primeiro vetor. Esse é o vetor de cointegração identificado pelo teste. Ele representa uma combinação linear estável entre as variáveis, ou seja, mesmo que GO, SP e MG sejam não estacionárias, essa combinação é estacionária.
+
+$$
+\text{GO}_{t-2} + 0,2937 \cdot \text{SP}_{t-2} - 1,3147 \cdot \text{MG}_{t-2} + 0,0404 = CI_t
+$$
+
+O mesmo resultado é obtido fazendo o teste do traço, como abaixo.
+
+``` {r aula12_7a, warning=FALSE, message=FALSE}
+### Teste de Cointegracao - Teste do Traco - 2 opcao de teste
+teste.traco <- ca.jo(dados, type='trace', K=2, ecdet='const',
+                     spec='longrun')
+summary(teste.traco)
+
+```
+
+Depois de verificar que as séries são I(1) e cointegradas, o próximo passo é estimar o VEC.
+
+``` {r aula12_8, warning=FALSE, message=FALSE}
+# LR-test for no linear trend
+#lttest(teste.traco, r = 1)
+
+#Estimacao do Modelo VECM
+#ect1 e o vetor de cointegracao 1
+#.dl1 indica 1 lag primeira diferenca
+#.l2 indica dois lags
+vecm <- cajorls(teste.coint, r=1)
+summary(vecm$rlm)
+vecm$beta
+
+#Para extrair os coeficientes do termo de correcao de erro
+vecm$rlm$coefficients[1,1] #para a primeira variavel
+vecm$rlm$coefficients[1,2] #para a segunda variavel
+vecm$rlm$coefficients[1,3] #para a terceira variavel
+
+#Para extrair os vetores de cointegracao
+vecm$beta[1,1] #para a primeira variavel
+vecm$beta[2,1] #para a segunda variavel
+vecm$beta[3,1] #para a terceira variavel
+vecm$beta[4,1] #para a constante
+
+#E possivel transformar o VECM em uma VAR para melhor
+#analisar a relacao entre as series
+vec.level <- vec2var(teste.coint, r=1)
+vec.level
+```
+
+## Resultados do VECM
+
+Foi estimado um modelo VECM com uma relação de cointegração (r = 1) e uma defasagem. Abaixo, a interpretação de cada equação do sistema:
+
+### $\Delta GO$ (variação de GO)
+
+- O termo de cointegração (`ect1`) apresenta sinal negativo, como esperado, mas **não é estatisticamente significativo** ($p = 0,212$).
+- A única variável significativa na equação é $\Delta MG(-1)$ (p < 0,001), sugerindo **influência de MG sobre GO no curto prazo**.
+- Conclusão: **GO não reage aos desvios de longo prazo**, mas é afetada por MG no curto prazo.
+
+### $\Delta SP$ (variação de SP)
+
+- Nenhuma variável, exceto $\Delta MG(-1)$, é significativa ($p = 0,009$).
+- O termo de cointegração não tem impacto estatisticamente significativo.
+- Conclusão: **SP não responde ao equilíbrio de longo prazo**, sendo relativamente exógena.
+
+### $\Delta MG$ (variação de MG)
+
+- O termo de cointegração é altamente significativo ($p < 0,001$), com coeficiente positivo.
+- $\Delta GO(-1)$ também é significativa ($p < 0,001$).
+- Conclusão: **MG é a variável que mais responde ao desequilíbrio de longo prazo**, além de ser afetada por GO no curto prazo.
+
+### Equações do VEC
+
+## Co-integração - Relações de Equilíbrio de Longo Prazo
+
+* Reforçando: se $Y_t \sim I(1)$, $X_t \sim I(1)$ e $Z_t \sim I(1)$ e $\varepsilon_t = Y_t - \beta_0 - \beta_1 X_t - \beta_2 Z_t \sim I(0)$, então as três séries são co-integradas, com vetor de cointegração:
+
+$$
+\beta = \begin{bmatrix} 1 \\ -\beta_0 \\ -\beta_1 \\ -\beta_2 \end{bmatrix}
+$$
+
+* No exemplo do Boi Gordo, o vetor de cointegração estimado é:
+
+$$
+\beta = \begin{bmatrix} 1 \\ -0{,}04043 \\ -0{,}29366 \\ +1{,}31467 \end{bmatrix}
+$$
+
+* A equação de cointegração estimada é:
+
+$$
+GO_{t-2} = -0{,}04043 - 0{,}29366 SP_{t-2} + 1{,}31467 MG_{t-2}
+$$
+
+* A relação de cointegração (equilíbrio de longo prazo) é:
+
+$$
+\varepsilon_t = GO_{t-2} - 0{,}04043 - 0{,}29366 SP_{t-2} + 1{,}31467 MG_{t-2}
+$$
+
+
+* O modelo VEC pode ser representado por:
+
+$$
+\Delta Y_t = \alpha + \Pi Y_{t-2} + \sum_{i=1}^{p-1} \Gamma_i \Delta Y_{t-i} + \varepsilon_t
+$$
+
+* Onde:
+
+$$
+\Pi Y_{t-2} = \psi \beta' Y_{t-2} =
+\begin{bmatrix}
+-0{,}05647 \\
+0{,}00241 \\
+0{,}23504
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+1 & -0{,}29366 & 1{,}31467 & -0{,}04043
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+GO_{t-2} \\
+SP_{t-2} \\
+MG_{t-2} \\
+C
+\end{bmatrix}
+$$
+
+* Que equivale a:
+
+$$
+\Pi Y_{t-2} = \psi \cdot (GO_{t-2} - 0{,}29366 SP_{t-2} + 1{,}31467 MG_{t-2} - 0{,}04043)
+$$
+
+
+$$
+\Pi Y_{t-2} = \psi \cdot \beta' Y_{t-2} =
+\begin{bmatrix}
+-0{,}05647 (GO_{t-2} - 0{,}29366 SP_{t-2} + 1{,}31467 MG_{t-2} - 0{,}04043) \\
+0{,}00241 (GO_{t-2} - 0{,}29366 SP_{t-2} + 1{,}31467 MG_{t-2} - 0{,}04043) \\
+0{,}23504 (GO_{t-2} - 0{,}29366 SP_{t-2} + 1{,}31467 MG_{t-2} - 0{,}04043)
+\end{bmatrix}
+$$
+
+* $\beta' Y_{t-2}\$ representa as "r" relações de cointegração que definem o equilíbrio de longo prazo;
+
+* $\psi$ é a matriz de ajustes de longo prazo;
+
+* Substituindo $\Pi = \psi \beta'$ na equação reparametrizada do VAR:
+
+$$
+\Delta Y_t = \alpha + \psi \beta' Y_{t-2} + \sum_{i=1}^{p-1} \Gamma_i \Delta Y_{t-i} + \varepsilon_t
+$$
+
+Esse é o chamado **Modelo Vetorial de Correção de Erro (VEC)**, que nada mais é do que um VAR com restrições de cointegração entre as variáveis.
+
+As equações estimadas do VEC são:
+
+$$
+\begin{cases}
+\Delta GO_t = -0{,}00238 \Delta GO_{t-1} + 0{,}06445 \Delta SP_{t-1} + 0{,}29447 \Delta MG_{t-1} - 0{,}05647 VC_{t-1} \\
+\Delta MG_t = 0{,}4728 \Delta GO_{t-1} + 0{,}0198 \Delta SP_{t-1} - 0{,}09202 \Delta MG_{t-1} + 0{,}2350 VC_{t-1} \\
+\Delta SP_t = 0{,}12255 \Delta GO_{t-1} + 0{,}03414 \Delta SP_{t-1} + 0{,}19918 \Delta MG_{t-1} + 0{,}00241 VC_{t-1}
+\end{cases}
+$$
+
+Com:
+
+$$
+VC = GO_{t-2} - 0{,}04043 - 0{,}29366 SP_{t-2} + 1{,}31467 MG_{t-2}
+$$
+
+
+
+### As IRF (Funções Impulso Resposta)
+
+``` {r aula12_9, warning=FALSE, message=FALSE}
+#Analise das Funcoes Impulso Resposta
+
+#Impulso em Goias e resposta em SP e MG
+irfgosp <- irf(vec.level, impulse='GO', response='SP',
+              boot = F, n.ahead=12, cumulative = F, ortho=F)
+plot(irfgosp)
+
+irfgomg <- irf(vec.level, impulse='GO', response='MG',
+               boot = F, n.ahead=12, cumulative = F, ortho=F)
+plot(irfgomg)
+
+#Impulso em Sao Paulo e resposta em Goias
+irfspgo <- irf(vec.level, impulse='SP', response='GO',
+               boot = F, n.ahead=12, cumulative = F, ortho=F)
+plot(irfspgo)
+
+irfspmg <- irf(vec.level, impulse='SP', response='MG',
+               boot = F, n.ahead=12, cumulative = F, ortho=F)
+plot(irfspmg)
+
+#Impulso em Minas Gerais e resposta em Goias e S?o Paulo
+irfmggo <- irf(vec.level, impulse='MG', response='GO',
+               boot = F, n.ahead=12, cumulative = F, ortho=F)
+plot(irfmggo)
+
+irfmgsp <- irf(vec.level, impulse='MG', response='SP',
+               boot = F, n.ahead=12, cumulative = F, ortho=F)
+plot(irfmgsp)
+```
+
+## Decomposição da Variância da Previsão (FEVD)
+
+``` {r aula12_10, warning=FALSE, message=FALSE}
+#Decomposicao da Variancia
+fevd(vec.level, n.ahead=12)
+```
+
+A decomposição da variância foi feita para 12 passos à frente (12 períodos). Abaixo, a análise para cada variável:
+
+### Variável GO (Goiás)
+
+- Inicialmente, 100% da variância da previsão de GO é explicada por choques nela mesma.
+- Após 12 períodos, 92,2% da variância ainda é explicada por GO, enquanto MG passa a contribuir com 6,3% e SP com apenas 1,5%.
+- **Conclusão:** GO é fortemente autocentrada, com pouca influência das outras variáveis.
+
+### Variável SP (São Paulo)
+
+- No curto prazo, SP é majoritariamente explicada por choques nela mesma (73,9%).
+- Ao longo do tempo, a influência de GO cresce, chegando a explicar 45% da variância da previsão de SP.
+- MG tem pouca ou nenhuma influência.
+- **Conclusão:** SP é relativamente autônoma, mas tem alguma dependência de GO no longo prazo.
+
+### Variável MG (Minas Gerais)
+
+- Inicialmente, 79,4% da variância de MG é explicada por ela mesma.
+- Ao final do horizonte de previsão, apenas 21% continuam sendo explicados por MG, enquanto GO passa a explicar 72,4%.
+- **Conclusão:** MG é fortemente influenciada por GO, sendo a variável mais reativa do sistema.
+
+
+``` {r aula12_11, warning=FALSE, message=FALSE}
+#Previsão
+
+vec.forecast <- predict(vec.level, n.ahead=12)
+
+autoplot(vec.forecast)
+```
