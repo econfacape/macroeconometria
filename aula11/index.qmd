@@ -38,7 +38,7 @@ execute:
 
 Um dos pressupostos para se estimar um modelo VAR é que as variáveis sejam estacionárias. Isso significa que se essa hipótese for violada, é necessário realizar outro tipo de análise, verificando a existência de **cointegração** entre duas ou mais variáveis, isto é, se existe uma relação de longo-prazo entre elas. 
 
-Se as séries não forem estacionárias, as mesmas podem estar relacionadas ao longo do tempo. Se for esse o caso, diz-se que as séries possuem uma tendência comum, o que nos permite avaliar a relação entre elas.
+Se as séries não forem estacionárias, ainda assim pode existir uma relação entre elas ao longo do tempo. Nesse caso, diz-se que as séries possuem uma tendência comum, o que permite investigar uma possível cointegração e, assim, avaliar a existência de uma relação de longo prazo entre elas.
 
 Sejam $Y_t$, $X_t$ e $Z_t$ três séries temporais e a seguinte relação de interesse:
 
@@ -64,9 +64,9 @@ $$
 $$
 <br>
 
-em que $\hat{\epsilon}_{t-1}$ são os resíduos da equação do slide anterior.
+em que $\hat{\epsilon}_{t-1}$ são os resíduos da primeira equação mostrada.
 
-Se $Y_t$, $X_t$ e $Z_t$ são não estacionárias e não co-integradas, deve-se ajustar a equação do slide anterior em primeiras diferenças, ou seja,
+Se $Y_t$, $X_t$ e $Z_t$ são não estacionárias e não co-integradas, deve-se ajustar a primeira equação em primeiras diferenças, ou seja,
 
 <br>
 
@@ -79,50 +79,53 @@ $$
 
 <br>
 
-As séries $Y_{1t}, Y_{2t}, Y_{3t}, \dots,Y_{kt}$ são co-integradas de ordem (d,b) se todas as séries forem integradas de ordem "d", I(d) e se existir uma combinação linear dessas variáveis que seja integrada de ordem (d-b), com $(0 \leq b \leq d) $.  
+As séries $Y_{1t}, Y_{2t}, Y_{3t}, \dots,Y_{kt}$ são **cointegradas de ordem (d, b)** se todas forem integradas de ordem $d$, ou seja, $I(d)$, e existir uma combinação linear dessas variáveis que seja integrada de ordem $(d-b)$, com $0 \leq b \leq d$.
 
-A combinação linear é dada por
-
-<br>
+Essa combinação linear é dada por:
 
 $$
-Z_t=a_1Y_{1t}+a_2Y_{2t}+a_3Y_{3t}+\dots+a_kY_{kt}
+Z_t = a_1Y_{1t} + a_2Y_{2t} + a_3Y_{3t} + \dots + a_kY_{kt}
 $$
 
-<br>
+O vetor $a = [a_1 \quad a_2 \quad a_3 \quad \dots \quad a_k]'$ é chamado de **vetor de cointegração**. 
 
-O vetor $a=[a_1 \quad a_2\quad a_3\quad \dots\quad a_k]'$ é chamado de "vetor de co-integração". Os casos de interesse para as relações econômicas são quando a combinação linear é estacionária, ou seja, I(0).
+O caso de maior interesse na análise econômica ocorre quando essa combinação linear é estacionária, ou seja, $I(0)$.
 
-Considere $Y_t \sim I(1)$, $X_t \sim I(1)$ e $Z_t \sim I(1)$ e a relação:
-
-<br>
+Considere $Y_t \sim I(1)$, $X_t \sim I(1)$ e $Z_t \sim I(1)$, com a seguinte relação de equilíbrio:
 
 $$
-Y_t=\beta_0+\beta_1 X_t+ \beta_2 Z_t
+Y_t = \beta_0 + \beta_1 X_t + \beta_2 Z_t
 $$
 
-<br>
-
-esta relação estará em equilíbrio de longo prazo se $0=Y_t-\beta_0-\beta_1 X_t- \beta_2 Z_t$, sendo que para o equilíbrio existir e ter significado econômico, o resíduo deve ser estacionário.
-
-Assim, com $Y_t \sim I(1)$, $X_t \sim I(1)$ e $Z_t \sim I(1)$ e $\epsilon_t=Y_t-\beta_0-\beta_1 X_t- \beta_2 Z_t \sim I(0)$, tem-se que as três séries são co-integradas com vetor de cointegração dado por 
-
-<br>
+Essa relação estará em **equilíbrio de longo prazo** se:
 
 $$
-\beta=[1 \quad -\beta_0\quad -\beta_1\quad -\beta_2]'
+0 = Y_t - \beta_0 - \beta_1 X_t - \beta_2 Z_t
 $$
-<br>
 
-## Vetores de Co-integração
+Ou seja, para que o equilíbrio tenha significado econômico, o resíduo dessa equação deve ser estacionário.
 
-<br>
+Assim, se:
 
-Os vetores de co-integração (CI) não são únicos. Podem existir várias combinações lineares estacionárias devido a existência de vários vetores de CI. O número de vetores de CI depende do número de variáveis envolvidas. Tem-se:
+$$
+\epsilon_t = Y_t - \beta_0 - \beta_1 X_t - \beta_2 Z_t \sim I(0)
+$$
 
-a) Caso de 2 variáveis: com 2 variáveis existe somente uma combinação estacionária entre as variáveis que representa uma relação de equilíbrio de longo prazo;
+então as três séries são cointegradas, com vetor de cointegração dado por:
 
-b) Caso de k variáveis: com k variáveis existem até k-1 vetores de co-integração linearmente independentes. 
+$$
+\beta = [1 \quad -\beta_0 \quad -\beta_1 \quad -\beta_2]'
+$$
+
+
+## Vetores de Cointegração
+
+Os vetores de cointegração não são únicos — podem existir várias combinações lineares que tornam as séries estacionárias. O número máximo de vetores de cointegração depende do número de variáveis envolvidas:
+
+- **Caso com 2 variáveis**: existe no máximo **1 vetor de cointegração**, representando uma única relação de equilíbrio de longo prazo;
+
+- **Caso com $k$ variáveis**: podem existir até **$k - 1$ vetores de cointegração linearmente independentes**.
+ 
 
 <br>
 
@@ -258,7 +261,7 @@ Os testes são realizados em sequencia até que a hipótese nula não seja rejei
 
 <br>
 
-# Exemplo
+# Exemplo 1
 
 <br>
 Considere 3 processos simulados, sendo dois AR(1) e um passeio aleatório.
@@ -334,267 +337,360 @@ Na seção correspondente aos vetores de cointegração (beta), se tem duas colu
 
 <br>
 
-# Exemplo Análise Macro
-
-``` {r aula12_1a, warning=FALSE, message=FALSE}
-# https://analisemacro.com.br/economia/macroeconometria/cointegracao-e-vetor-de-correcao-de-erros-prevendo-o-desemprego/
-
-# Carrega pacotes
-library(tsDyn)
-library(forecast)
-library(tidyr)
-library(ggplot2)
-library(dplyr)
-library(lubridate)
-library(readr)
-library(urca)
-
-#Taxa de desocupação, na semana de referência, das pessoas de 14 anos ou mais de idade (Sidra/IBGE);
-#Indicador Antecedente de Emprego (IAEmp) com ajuste sazonal (FGV);
-#Indicador de Incerteza da Economia Brasil (IIE-Br) (FGV);
-#Termos de busca: “empregos” e “seguro desemprego” (Google);
-#Índice de Atividade Econômica do Banco Central (IBC-Br) com ajuste sazonal (BCB);
-#Taxa de juros Selic acumulada no mês anualizada base 252 (BCB).
-
-dados <- readr::read_csv("https://aluno.analisemacro.com.br/download/53251/?tmstv=1691078342")
-
-# Dados em formato time series
-dados_ts <- stats::ts(
-  data = dados[-1],
-  start = c(
-    lubridate::year(min(dados$date)),
-    lubridate::month(min(dados$date))
-  ),
-  frequency = 12
-)
-
-```
-
-``` {r aula12_2a, warning=FALSE, message=FALSE}
-# Converter os dados para o formato "long"
-dados_long <-
-  dados |> 
-       tidyr::pivot_longer(!date,
-                           names_to = "variaveis",
-                           values_to = "valores"
-                           )
-
-# Criar o gráfico
-ggplot2::ggplot(dados_long) +
-  ggplot2::geom_line(ggplot2::aes(x = date, y = valores, color = variaveis)) +
-  ggplot2::facet_wrap(~variaveis, scales = "free_y") +
-  ggplot2::scale_x_date(date_labels = "%Y", date_breaks = "4 years") +
-  ggplot2::theme(legend.position = "none")
-```
-
-``` {r aula12_3a, warning=FALSE, message=FALSE}
-# Teste de Cointegração de Johansen (teste automatizado que reporta o posto e lag)
-rank_coint <- tsDyn::rank.select(
-  data    = dados_ts,
-  lag.max = 10,
-  include = "const" # componentes determinísticos do VECM (constante)
-)
-
-rank_coint
-
-# Realiza o Teste usando a função ca.jo
-summary(urca::ca.jo(dados_ts, type = 'eigen', K = 2, ecdet = 'const', 
-              spec = 'transitory'))
-```
+# Exemplo 2 - Análise de Preços de Boi Gordo
 
 ``` {r aula12_4, warning=FALSE, message=FALSE}
-# Estimar VECM
-fit_vecm <- tsDyn::VECM(
-  data    = dados_ts,
-  lag     = rank_coint$HQ_min[, "lag"],
-  r       = rank_coint$HQ_min[, "rank"],
-  include = "const",
-  estim   = "ML",
-  exogen = forecast::seasonaldummy(x = dados_ts[, "desocupacao"])
-)
+#Direcionado o R para o Diretorio a ser trabalhado
+setwd('/Users/jricardofl/Dropbox/tempecon/facape/econometria2')
 
-summary(fit_vecm)
+#Limpa o Ambiente Global
+rm(list=ls())
+
+#Inicio do Script
+#Pacotes a serem utilizados
+#library(BMR)
+library(vars)
+library(urca)
+library(forecast)
+library(zoo)
+library(xts)
+library(lmtest)
+library(imputeTS)
+library(ggfortify)
+library(aod)
+
+#library(devtools)
+#install_github("kthohr/BMR")
+
+#Leitura dos Dados
+#Boi Gordo em Goias, Sao Paulo e Minas Gerais
+dados <- ts(read.csv2('boigordo.csv', header = T,
+                      sep=',', dec='.')[,-1],
+            start=c(1999,01), freq=12)
+dates <- seq(as.Date('1999-01-01'), as.Date('2011-05-01'),
+             by='1 month')
+#gtsplot(dados, dates=dates)
+plot(dados)
 ```
+
+Resolução do problema de dados faltando com Filtro de Kalman para a série de preços de MG
 
 ``` {r aula12_5, warning=FALSE, message=FALSE}
-fit_tidy <- fit_vecm %>%
-  summary() %>%
-  purrr::pluck("Pvalues") %>%
-  dplyr::as_tibble(rownames = ".response") %>%
-  tidyr::pivot_longer(
-    cols      = -".response",
-    names_to  = "term",
-    values_to = "p.value"
-  ) %>%
-  dplyr::mutate(.model = "vecm")
-
-# Quantos coeficientes foram significativos por modelo?
-fit_tidy %>%
-  dplyr::group_by(.model) %>%
-  dplyr::summarise(
-    n_coeficientes      = dplyr::n(),
-    n_significativos    = sum(p.value < 0.05),
-    perc_significativos = n_significativos / n_coeficientes * 100
-  )
+dados <-na_kalman(dados)
+plot(dados)
 ```
-
 
 ``` {r aula12_6, warning=FALSE, message=FALSE}
-resids_vecm <- fit_vecm %>%
-  residuals() %>%
-  dplyr::as_tibble() %>%
-  dplyr::mutate(
-    data = seq.Date(
-      from       = min(dados$date),
-      by         = "month",
-      length.out = nrow(.)
-    ) %>% tsibble::yearmonth()
-  ) %>%
-  tidyr::pivot_longer(
-    cols      = -"data",
-    names_to  = ".response",
-    values_to = ".resid"
-  ) %>%
-  tsibble::as_tsibble(index = "data", key = ".response")
+#Analise da Estacionariedade das series
+#Teste de Raiz Unitaria na Serie
+#Verificacao da Estacionariedade das series
+#Teste de raiz unitaria DF-GLS
+#Definicao do numero maximo de lags
+print(12*(length(dados)/100)^(1/4))
 
-# ACF
-resids_vecm %>%
-  feasts::ACF(.resid) %>%
-  fabletools::autoplot()
+#Estatistica de Teste DFGLS para Pre?o de Goias
+goT.dfgls <- ur.ers(dados[,1], type = c("DF-GLS"),
+                      model = c("trend"),
+                      lag.max = 12)
+summary(goT.dfgls)
 
-# Histograma
-resids_vecm %>%
-  ggplot2::ggplot() +
-  ggplot2::aes(x = .resid) +
-  ggplot2::geom_histogram() +
-  ggplot2::facet_wrap(~ .response, scales = "free")
+#Estatistica de Teste DFGLS para Pre?o de S?o Paulo
+spT.dfgls <- ur.ers(dados[,2], type = c("DF-GLS"),
+                    model = c("trend"),
+                    lag.max = 12)
+summary(spT.dfgls)
+
+#Estatistica de Teste DFGLS para Pre?o de Minas Gerais
+mgT.dfgls <- ur.ers(dados[,3], type = c("DF-GLS"),
+                    model = c("trend"),
+                    lag.max = 13)
+summary(mgT.dfgls)
+
 ```
+
+Os resultados para as três séries indicam a presença de raiz unitária, ou seja, não sao estacionárias em nível. 
+ 
+Como pode ser visto abaixo, todas ficam estacionárias na primeira diferença.
+ 
+``` {r aula12_6a, warning=FALSE, message=FALSE}
+ # Número de diferenças para tornar a série estacionária
+
+feasts::unitroot_ndiffs(dados[, "GO"])
+feasts::unitroot_ndiffs(dados[, "SP"])
+feasts::unitroot_ndiffs(dados[, "MG"])
+
+```
+
+Com isto, se pode estimar um modelo VEC se além de integradas de mesma ordem e não estacionárias em nível, as variáveis forem cointegradas. 
+
+Abaixo estão os resultados do teste do Traço e do Máximo Autovalor.
 
 ``` {r aula12_7, warning=FALSE, message=FALSE}
-# Restringir dados (amostra de treino)
-dados_treino <- dados %>%
-  dplyr::slice(1:(dplyr::n() - 12))
+#Determinacao do lag da Defasagem
+#VARselect(dados, lag.max = 6, season=12, type='trend')$selection
+var<-VARselect(dados, lag.max = 6, season=12, type='trend')
+var
+nlags<-var$selection["SC(n)"]
+#pelo resultado, pode-se considerar um VAR(1).
 
-dados_treino_mts <- stats::window(
-  x     = dados_ts,
-  start = stats::start(dados_ts),
-  end   = c(
-    lubridate::year(max(dados_treino$date)),
-    lubridate::month(max(dados_treino$date))
-  )
-)
+# Teste de Cointegracao - Maximo Autovalor
+teste.coint <- ca.jo(dados, type='eigen', K=2, ecdet='const',
+                  spec='longrun')
 
-# Dados usados para comparar previsão (amostra de teste)
-dados_teste <- dados %>%
-  dplyr::filter(date > max(dados_treino$date))
+#Resultado para cada Vetor de Co-integracao
+#teste.coint@teststat[1] #H0: r=2 nao pode ser rejeitado
+#teste.coint@teststat[2] #H0: r=1 nao pode ser rejeitado
+#teste.coint@teststat[3] #H0: r=0 nao pode ser rejeitado
+#teste.coint@cval
 
-dados_teste_mts <- stats::window(
-  x     = dados_ts,
-  start = c(
-    lubridate::year(max(dados_treino$date)),
-    lubridate::month(max(dados_treino$date)) + 1
-  ),
-  end   = stats::end(dados_ts)
-)
+#Outra opcao para receber todos os resultados do Teste de CI
+summary(teste.coint)
+```
+
+A interpretação da saída acima é que rejeita-se a hipótese $r = 0$ (nenhuma cointegração), ou seja,  existe pelo menos 1 vetor de cointegração.
+
+Não rejeita $r \leq 1$, ou seja, não há evidência para 2 ou mais vetores.
+
+O teste indica 1 vetor de cointegração entre as variáveis GO, SP e MG.
+
+O vetor de cointegração que importa é o primeiro vetor. Esse é o vetor de cointegração identificado pelo teste. Ele representa uma combinação linear estável entre as variáveis, ou seja, mesmo que GO, SP e MG sejam não estacionárias, essa combinação é estacionária.
+
+$$
+\text{GO}_{t-2} + 0,2937 \cdot \text{SP}_{t-2} - 1,3147 \cdot \text{MG}_{t-2} + 0,0404 = CI_t
+$$
+
+O mesmo resultado é obtido fazendo o teste do traço, como abaixo.
+
+``` {r aula12_7a, warning=FALSE, message=FALSE}
+### Teste de Cointegracao - Teste do Traco - 2 opcao de teste
+teste.traco <- ca.jo(dados, type='trace', K=2, ecdet='const',
+                     spec='longrun')
+summary(teste.traco)
 
 ```
+
+Depois de verificar que as séries são I(1) e cointegradas, o próximo passo é estimar o VEC.
 
 ``` {r aula12_8, warning=FALSE, message=FALSE}
-# Reestimar modelos com restrição de amostra
-rank_coint <- tsDyn::rank.select(
-  data    = dados_treino_mts,
-  lag.max = 5,
-  include = "const"
-)
+# LR-test for no linear trend
+#lttest(teste.traco, r = 1)
 
-fit_vecm_train <- tsDyn::VECM( # VECM
-  data    = dados_treino_mts,
-  lag     = rank_coint$HQ_min[, "lag"],
-  r       = rank_coint$HQ_min[, "rank"],
-  include = "const",
-  estim   = "ML",
-  exogen  = forecast::seasonaldummy(x = dados_treino_mts[, "desocupacao"])
-)
+#Estimacao do Modelo VECM
+#ect1 e o vetor de cointegracao 1
+#.dl1 indica 1 lag primeira diferenca
+#.l2 indica dois lags
+vecm <- cajorls(teste.coint, r=1)
+summary(vecm$rlm)
+vecm$beta
 
-# Previsões do VECM
-fc_vecm_teste <- predict(
-  fit_vecm_train,
-  n.ahead = 12,
-  exoPred = forecast::seasonaldummy(x = dados_treino_mts[, "desocupacao"], h = 12)
-)
+#Para extrair os coeficientes do termo de correcao de erro
+vecm$rlm$coefficients[1,1] #para a primeira variavel
+vecm$rlm$coefficients[1,2] #para a segunda variavel
+vecm$rlm$coefficients[1,3] #para a terceira variavel
 
-# Plotando as previsões vs. observado
-fc_tbl_teste <- tibble::tibble(
-  data  = lubridate::as_date(dados_teste$date),
-  Desocupacao = dados_teste$desocupacao,
-  vecm  = fc_vecm_teste[, "desocupacao"]
-)
+#Para extrair os vetores de cointegracao
+vecm$beta[1,1] #para a primeira variavel
+vecm$beta[2,1] #para a segunda variavel
+vecm$beta[3,1] #para a terceira variavel
+vecm$beta[4,1] #para a constante
 
-fc_tbl_teste %>%
-  tidyr::pivot_longer(
-    cols      = -"data",
-    names_to  = "modelo",
-    values_to = "valor"
-  ) %>%
-  ggplot2::ggplot() +
-  ggplot2::aes(x = data, y = valor, color = modelo) +
-  ggplot2::geom_line(size = 1.5) +
-  ggplot2::labs(title = "Desemprego observado vs. previsto")
+#E possivel transformar o VECM em uma VAR para melhor
+#analisar a relacao entre as series
+vec.level <- vec2var(teste.coint, r=1)
+vec.level
 ```
+
+## Resultados do VECM
+
+Foi estimado um modelo VECM com uma relação de cointegração (r = 1) e uma defasagem. Abaixo, a interpretação de cada equação do sistema:
+
+### $\Delta GO$ (variação de GO)
+
+- O termo de cointegração (`ect1`) apresenta sinal negativo, como esperado, mas **não é estatisticamente significativo** ($p = 0,212$).
+- A única variável significativa na equação é $\Delta MG(-1)$ (p < 0,001), sugerindo **influência de MG sobre GO no curto prazo**.
+- Conclusão: **GO não reage aos desvios de longo prazo**, mas é afetada por MG no curto prazo.
+
+### $\Delta SP$ (variação de SP)
+
+- Nenhuma variável, exceto $\Delta MG(-1)$, é significativa ($p = 0,009$).
+- O termo de cointegração não tem impacto estatisticamente significativo.
+- Conclusão: **SP não responde ao equilíbrio de longo prazo**, sendo relativamente exógena.
+
+### $\Delta MG$ (variação de MG)
+
+- O termo de cointegração é altamente significativo ($p < 0,001$), com coeficiente positivo.
+- $\Delta GO(-1)$ também é significativa ($p < 0,001$).
+- Conclusão: **MG é a variável que mais responde ao desequilíbrio de longo prazo**, além de ser afetada por GO no curto prazo.
+
+### Equações do VEC
+
+## Co-integração - Relações de Equilíbrio de Longo Prazo
+
+* Reforçando: se $Y_t \sim I(1)$, $X_t \sim I(1)$ e $Z_t \sim I(1)$ e $\varepsilon_t = Y_t - \beta_0 - \beta_1 X_t - \beta_2 Z_t \sim I(0)$, então as três séries são co-integradas, com vetor de cointegração:
+
+$$
+\beta = \begin{bmatrix} 1 \\ -\beta_0 \\ -\beta_1 \\ -\beta_2 \end{bmatrix}
+$$
+
+* No exemplo do Boi Gordo, o vetor de cointegração estimado é:
+
+$$
+\beta = \begin{bmatrix} 1 \\ -0{,}04043 \\ -0{,}29366 \\ +1{,}31467 \end{bmatrix}
+$$
+
+* A equação de cointegração estimada é:
+
+$$
+GO_{t-2} = -0{,}04043 - 0{,}29366 SP_{t-2} + 1{,}31467 MG_{t-2}
+$$
+
+* A relação de cointegração (equilíbrio de longo prazo) é:
+
+$$
+\varepsilon_t = GO_{t-2} - 0{,}04043 - 0{,}29366 SP_{t-2} + 1{,}31467 MG_{t-2}
+$$
+
+
+* O modelo VEC pode ser representado por:
+
+$$
+\Delta Y_t = \alpha + \Pi Y_{t-2} + \sum_{i=1}^{p-1} \Gamma_i \Delta Y_{t-i} + \varepsilon_t
+$$
+
+* Onde:
+
+$$
+\Pi Y_{t-2} = \psi \beta' Y_{t-2} =
+\begin{bmatrix}
+-0{,}05647 \\
+0{,}00241 \\
+0{,}23504
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+1 & -0{,}29366 & 1{,}31467 & -0{,}04043
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+GO_{t-2} \\
+SP_{t-2} \\
+MG_{t-2} \\
+C
+\end{bmatrix}
+$$
+
+* Que equivale a:
+
+$$
+\Pi Y_{t-2} = \psi \cdot (GO_{t-2} - 0{,}29366 SP_{t-2} + 1{,}31467 MG_{t-2} - 0{,}04043)
+$$
+
+
+$$
+\Pi Y_{t-2} = \psi \cdot \beta' Y_{t-2} =
+\begin{bmatrix}
+-0{,}05647 (GO_{t-2} - 0{,}29366 SP_{t-2} + 1{,}31467 MG_{t-2} - 0{,}04043) \\
+0{,}00241 (GO_{t-2} - 0{,}29366 SP_{t-2} + 1{,}31467 MG_{t-2} - 0{,}04043) \\
+0{,}23504 (GO_{t-2} - 0{,}29366 SP_{t-2} + 1{,}31467 MG_{t-2} - 0{,}04043)
+\end{bmatrix}
+$$
+
+* $\beta' Y_{t-2}\$ representa as "r" relações de cointegração que definem o equilíbrio de longo prazo;
+
+* $\psi$ é a matriz de ajustes de longo prazo;
+
+* Substituindo $\Pi = \psi \beta'$ na equação reparametrizada do VAR:
+
+$$
+\Delta Y_t = \alpha + \psi \beta' Y_{t-2} + \sum_{i=1}^{p-1} \Gamma_i \Delta Y_{t-i} + \varepsilon_t
+$$
+
+Esse é o chamado **Modelo Vetorial de Correção de Erro (VEC)**, que nada mais é do que um VAR com restrições de cointegração entre as variáveis.
+
+As equações estimadas do VEC são:
+
+$$
+\begin{cases}
+\Delta GO_t = -0{,}00238 \Delta GO_{t-1} + 0{,}06445 \Delta SP_{t-1} + 0{,}29447 \Delta MG_{t-1} - 0{,}05647 VC_{t-1} \\
+\Delta MG_t = 0{,}4728 \Delta GO_{t-1} + 0{,}0198 \Delta SP_{t-1} - 0{,}09202 \Delta MG_{t-1} + 0{,}2350 VC_{t-1} \\
+\Delta SP_t = 0{,}12255 \Delta GO_{t-1} + 0{,}03414 \Delta SP_{t-1} + 0{,}19918 \Delta MG_{t-1} + 0{,}00241 VC_{t-1}
+\end{cases}
+$$
+
+Com:
+
+$$
+VC = GO_{t-2} - 0{,}04043 - 0{,}29366 SP_{t-2} + 1{,}31467 MG_{t-2}
+$$
+
+
+
+### As IRF (Funções Impulso Resposta)
 
 ``` {r aula12_9, warning=FALSE, message=FALSE}
-# Métricas de acurácia
-tsDyn::accuracy_stat(
-  fc_vecm_teste,
-  dados_teste_mts
-)
+#Analise das Funcoes Impulso Resposta
 
-# Função para calcular U de Theil (versão 2: Theil, 1966)
-u_theil <- function(actual, forecast) {
-  
-  n <- length(actual)
-  test <- 1:n
-  
-  fpe <- (c(forecast[2:n]) / c(actual[1:(n - 1)]) - 1)[test - 1]
-  ape <- (c(actual[2:n]) / c(actual[1:(n - 1)]) - 1)[test - 1]
-  theil <- sqrt(sum((fpe - ape)^2, na.rm = TRUE) / sum(ape^2, na.rm = TRUE))
-  
-  return(theil)
-  
-}
+#Impulso em Goias e resposta em SP e MG
+irfgosp <- irf(vec.level, impulse='GO', response='SP',
+              boot = F, n.ahead=12, cumulative = F, ortho=F)
+plot(irfgosp)
 
-u_theil(actual = fc_tbl_teste$Desocupacao, forecast = fc_tbl_teste$vecm)
+irfgomg <- irf(vec.level, impulse='GO', response='MG',
+               boot = F, n.ahead=12, cumulative = F, ortho=F)
+plot(irfgomg)
+
+#Impulso em Sao Paulo e resposta em Goias
+irfspgo <- irf(vec.level, impulse='SP', response='GO',
+               boot = F, n.ahead=12, cumulative = F, ortho=F)
+plot(irfspgo)
+
+irfspmg <- irf(vec.level, impulse='SP', response='MG',
+               boot = F, n.ahead=12, cumulative = F, ortho=F)
+plot(irfspmg)
+
+#Impulso em Minas Gerais e resposta em Goias e S?o Paulo
+irfmggo <- irf(vec.level, impulse='MG', response='GO',
+               boot = F, n.ahead=12, cumulative = F, ortho=F)
+plot(irfmggo)
+
+irfmgsp <- irf(vec.level, impulse='MG', response='SP',
+               boot = F, n.ahead=12, cumulative = F, ortho=F)
+plot(irfmgsp)
 ```
+
+## Decomposição da Variância da Previsão (FEVD)
 
 ``` {r aula12_10, warning=FALSE, message=FALSE}
-# Previsões do VECM
-fc_vecm <- predict(
-  fit_vecm,
-  n.ahead = 12,
-  exoPred = forecast::seasonaldummy(x = dados_treino_mts[, "desocupacao"], h = 12)
-)
-
-fcst <- dados |>
-  dplyr::select(date, desocupacao) |> 
-  dplyr::mutate("id" = "Real") |> 
-  dplyr::bind_rows(
-         fc_vecm[, "desocupacao"] %>%
-         dplyr::as_tibble() %>%
-         dplyr::mutate(
-            "date" = seq.Date(
-              from = dplyr::last(dados$date) %m+% months(1),
-              by = "month",
-              length.out = nrow(.)
-              ),
-            "id" = "Previsão"
-            ) |>
-           dplyr::rename("desocupacao" = value)
-    )
-
-fcst |> 
-  ggplot2::ggplot()+
-  ggplot2::aes(x = date, y = desocupacao, color = id)+
-  ggplot2::geom_line()
-
+#Decomposicao da Variancia
+fevd(vec.level, n.ahead=12)
 ```
-<br>
+
+A decomposição da variância foi feita para 12 passos à frente (12 períodos). Abaixo, a análise para cada variável:
+
+### Variável GO (Goiás)
+
+- Inicialmente, 100% da variância da previsão de GO é explicada por choques nela mesma.
+- Após 12 períodos, 92,2% da variância ainda é explicada por GO, enquanto MG passa a contribuir com 6,3% e SP com apenas 1,5%.
+- **Conclusão:** GO é fortemente autocentrada, com pouca influência das outras variáveis.
+
+### Variável SP (São Paulo)
+
+- No curto prazo, SP é majoritariamente explicada por choques nela mesma (73,9%).
+- Ao longo do tempo, a influência de GO cresce, chegando a explicar 45% da variância da previsão de SP.
+- MG tem pouca ou nenhuma influência.
+- **Conclusão:** SP é relativamente autônoma, mas tem alguma dependência de GO no longo prazo.
+
+### Variável MG (Minas Gerais)
+
+- Inicialmente, 79,4% da variância de MG é explicada por ela mesma.
+- Ao final do horizonte de previsão, apenas 21% continuam sendo explicados por MG, enquanto GO passa a explicar 72,4%.
+- **Conclusão:** MG é fortemente influenciada por GO, sendo a variável mais reativa do sistema.
+
+
+``` {r aula12_11, warning=FALSE, message=FALSE}
+#Previsão
+
+vec.forecast <- predict(vec.level, n.ahead=12)
+
+autoplot(vec.forecast)
+```
